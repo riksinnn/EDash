@@ -108,10 +108,12 @@ export default function SignIn() {
 
       <form onSubmit={handleSignIn} className="space-y-4">
         <div>
-          <label className="mb-2 block text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
+          <label htmlFor="email" className="mb-2 block text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
             Email Address
           </label>
           <Input
+            id="email"
+            name="email"
             type="email"
             placeholder="name@school.edu"
             value={email}
@@ -120,11 +122,13 @@ export default function SignIn() {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
+          <label htmlFor="password" className="mb-2 block text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
             Password
           </label>
           <div className="relative">
             <Input
+              id="password"
+              name="password"
               type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
               value={password}

@@ -54,10 +54,12 @@ export default function SignUp() {
 
       <form onSubmit={handleSignUp} className="space-y-4">
         <div>
-          <label className="mb-2 block text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
+          <label htmlFor="email" className="mb-2 block text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
             Email Address
           </label>
           <Input
+            id="email"
+            name="email"
             type="email"
             placeholder="name@school.edu"
             value={email}
@@ -66,10 +68,12 @@ export default function SignUp() {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
+          <label htmlFor="password" className="mb-2 block text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
             Password
           </label>
           <Input
+            id="password"
+            name="password"
             type="password"
             placeholder="Create a secure password"
             value={password}
