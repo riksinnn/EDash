@@ -1,15 +1,30 @@
-export const Button = ({ children, variant = "primary", ...props }) => {
-  const baseStyles = "px-6 py-2 rounded-lg font-medium transition-all active:scale-95";
-  
+export function Button({
+  children,
+  variant = "primary",
+  className = "",
+  type = "button",
+  ...props
+}) {
+  const baseStyles =
+    "inline-flex items-center justify-center rounded-2xl px-5 py-3 text-base font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[#89a171]/40 disabled:cursor-not-allowed disabled:opacity-60";
+
   const variants = {
-    primary: "bg-planner-olive text-white hover:bg-opacity-90 shadow-md",
-    outline: "border-2 border-planner-olive text-planner-olive hover:bg-planner-cream",
-    ghost: "text-stone-500 hover:text-planner-olive"
+    primary:
+      "bg-[var(--accent-strong)] text-[var(--app-panel)] shadow-[var(--shadow-soft)] hover:brightness-95",
+    outline:
+      "border border-[var(--app-border)] bg-[var(--app-panel-muted)] text-[var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-[var(--app-panel-soft)]",
+    ghost: "bg-transparent text-[var(--text-secondary)] hover:bg-[var(--accent-soft)]",
+    pill: "border border-[var(--app-border)] bg-[var(--app-panel)] text-[var(--text-primary)] hover:bg-[var(--app-panel-soft)]",
+    icon: "h-12 w-12 rounded-full bg-[var(--text-primary)] px-0 py-0 text-[var(--app-panel)] hover:opacity-90",
   };
 
   return (
-    <button className={`${baseStyles} ${variants[variant]}`} {...props}>
+    <button
+      type={type}
+      className={[baseStyles, variants[variant], className].join(" ")}
+      {...props}
+    >
       {children}
     </button>
   );
-};
+}
