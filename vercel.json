@@ -5,5 +5,6 @@
       "source": "/((?!assets/|icons.svg|favicon.svg|manifest.webmanifest|sw.js|registerSW.js|workbox-).*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "buildCommand": "npm install --legacy-peer-deps && npm run build"
 }
