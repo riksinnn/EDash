@@ -19,6 +19,7 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     const rememberedEmail = window.localStorage.getItem(rememberedEmailKey);
@@ -26,6 +27,15 @@ export default function SignIn() {
       setEmail(rememberedEmail);
       setRememberMe(true);
     }
+  }, []);
+
+  // Auto-refresh lockout status every second to detect when lock expires
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshTick(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const lockout = useMemo(() => {
@@ -44,7 +54,7 @@ export default function SignIn() {
       window.localStorage.removeItem(loginAttemptsKey);
       return null;
     }
-  }, [message, isSubmitting]);
+  }, [message, isSubmitting, refreshTick]);
 
   const handleSignIn = async (event) => {
     event.preventDefault();
@@ -66,7 +76,7 @@ export default function SignIn() {
 
     try {
       setIsSubmitting(true);
-      await login(email.trim(), password, rememberMe);
+      await login(email.trim(), password);
       if (rememberMe) {
         window.localStorage.setItem(rememberedEmailKey, email.trim());
       } else {
@@ -122,9 +132,14 @@ export default function SignIn() {
         </div>
 
         <div>
-          <label htmlFor="password" className="mb-2 block text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
-            Password
-          </label>
+          <div className="mb-2 flex items-center justify-between">
+            <label htmlFor="password" className="block text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
+              Password
+            </label>
+            <Link to="/forgot-password" className="text-xs font-semibold text-[var(--accent)] hover:underline">
+              Forgot?
+            </Link>
+          </div>
           <div className="relative">
             <Input
               id="password"

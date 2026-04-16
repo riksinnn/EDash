@@ -1,52 +1,107 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import {
-  browserLocalPersistence,
-  browserSessionPersistence,
-  onAuthStateChanged,
-  setPersistence,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-} from "firebase/auth";
-import { auth } from "../firebaseConfig";
-import { syncFirebaseUserToSupabase } from "../lib/syncFirebaseUserToSupabase";
+import { supabase } from "../lib/supabase";
 
 const AuthContext = createContext();
+
+/**
+ * Normalize user object to include displayName from various sources
+ * Handles both email signups (display_name) and Google OAuth (full_name)
+ */
+const normalizeUser = (supabaseUser) => {
+  if (!supabaseUser) return null;
+
+  return {
+    ...supabaseUser,
+    displayName:
+      supabaseUser.user_metadata?.display_name ||
+      supabaseUser.user_metadata?.full_name ||
+      supabaseUser.user_metadata?.name ||
+      supabaseUser.email?.split("@")[0] ||
+      "Student Planner",
+    photoURL: supabaseUser.user_metadata?.picture || supabaseUser.user_metadata?.avatar_url || null,
+  };
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
+    let mounted = true;
 
-      if (currentUser) {
-        try {
-          await syncFirebaseUserToSupabase(currentUser);
-        } catch (error) {
-          console.error("Supabase user sync failed:", error);
+    const initAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (mounted) {
+          setUser(normalizeUser(session?.user ?? null));
+        }
+      } catch (error) {
+        console.error("Failed to get initial session:", error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
         }
       }
+    };
 
-      setLoading(false);
-    });
+    initAuth();
 
-    return () => unsubscribe();
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (mounted) {
+          setUser(normalizeUser(session?.user ?? null));
+          setLoading(false);
+        }
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
   }, []);
 
-  const login = async (email, password, rememberMe = true) => {
-    await setPersistence(
-      auth,
-      rememberMe ? browserLocalPersistence : browserSessionPersistence,
-    );
-    return signInWithEmailAndPassword(auth, email, password);
+  const login = async (email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (error) throw error;
+    return data;
   };
 
-  const signup = (email, password) =>
-    createUserWithEmailAndPassword(auth, email, password);
+  const signup = async (email, password, displayName) => {
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        data: {
+          display_name: displayName,
+        },
+      },
+    });
 
-  const logout = () => signOut(auth);
+    if (error) throw error;
+
+    // Update user metadata with display name
+    if (data.user) {
+      await supabase.auth.updateUser({
+        data: {
+          display_name: displayName,
+        },
+      });
+    }
+
+    return data;
+  };
+
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  };
 
   return (
     <AuthContext.Provider value={{ user, login, signup, logout }}>

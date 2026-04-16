@@ -11,6 +11,8 @@ import Settings from "./pages/settings";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 import Logout from "./pages/auth/logout";
+import ForgotPassword from "./pages/auth/forgotPassword";
+import ResetPassword from "./pages/auth/resetPassword";
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -51,6 +53,18 @@ function App() {
                   <SignUp />
                 </PublicOnlyRoute>
               }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                <PublicOnlyRoute>
+                  <ForgotPassword />
+                </PublicOnlyRoute>
+              }
+            />
+            <Route
+              path="/reset-password"
+              element={<ResetPassword />}
             />
             <Route path="/logout" element={<Logout />} />
             <Route

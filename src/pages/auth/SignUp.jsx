@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebaseConfig";
+import { useAuth } from "../../context/AuthContext";
 import SocialAuth from "../../components/auth/SocialAuth";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 
 export default function SignUp() {
+  const { signup } = useAuth();
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -15,13 +16,13 @@ export default function SignUp() {
   const handleSignUp = async (event) => {
     event.preventDefault();
 
-    if (!email.trim() || !password) {
-      setMessage("Enter your email and create a password.");
+    if (!fullName.trim() || !email.trim() || !password) {
+      setMessage("Enter your name, email, and create a password.");
       return;
     }
 
     try {
-      await createUserWithEmailAndPassword(auth, email.trim(), password);
+      await signup(email.trim(), password, fullName.trim());
       navigate("/dashboard");
     } catch (error) {
       console.error(error);
@@ -53,6 +54,20 @@ export default function SignUp() {
       </div>
 
       <form onSubmit={handleSignUp} className="space-y-4">
+        <div>
+          <label htmlFor="fullName" className="mb-2 block text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
+            Full Name
+          </label>
+          <Input
+            id="fullName"
+            name="fullName"
+            type="text"
+            placeholder="Your full name"
+            value={fullName}
+            onChange={(event) => setFullName(event.target.value)}
+          />
+        </div>
+
         <div>
           <label htmlFor="email" className="mb-2 block text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
             Email Address
