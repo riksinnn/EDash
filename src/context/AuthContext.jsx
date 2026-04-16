@@ -10,29 +10,34 @@ const AuthContext = createContext();
 const normalizeUser = (supabaseUser) => {
   if (!supabaseUser) return null;
 
+  // Prioritize display_name, then full_name, then name.
+  const displayName =
+    supabaseUser.user_metadata?.display_name ||
+    supabaseUser.user_metadata?.full_name ||
+    supabaseUser.user_metadata?.name;
+
   return {
     ...supabaseUser,
-    displayName:
-      supabaseUser.user_metadata?.display_name ||
-      supabaseUser.user_metadata?.full_name ||
-      supabaseUser.user_metadata?.name ||
-      supabaseUser.email?.split("@")[0] ||
-      "Student Planner",
-    photoURL: supabaseUser.user_metadata?.picture || supabaseUser.user_metadata?.avatar_url || null,
+    displayName: displayName,
+    photoURL:
+      supabaseUser.user_metadata?.picture ||
+      supabaseUser.user_metadata?.avatar_url ||
+      null,
   };
 };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Start in loading state to check session
 
   useEffect(() => {
     let mounted = true;
 
     const initAuth = async () => {
       try {
-        // Get initial session
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (mounted) {
           setUser(normalizeUser(session?.user ?? null));
         }

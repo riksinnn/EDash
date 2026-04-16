@@ -1,9 +1,17 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Check, X } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import SocialAuth from "../../components/auth/SocialAuth";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
+
+const passwordRequirements = {
+  minLength: { label: "At least 8 characters", regex: /.{8,}/ },
+  hasUppercase: { label: "One uppercase letter (A-Z)", regex: /[A-Z]/ },
+  hasLowercase: { label: "One lowercase letter (a-z)", regex: /[a-z]/ },
+  hasNumber: { label: "One number (0-9)", regex: /\d/ },
+};
 
 export default function SignUp() {
   const { signup } = useAuth();
@@ -13,11 +21,28 @@ export default function SignUp() {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
+  const passwordStrength = useMemo(() => {
+    const checks = {
+      minLength: passwordRequirements.minLength.regex.test(password),
+      hasUppercase: passwordRequirements.hasUppercase.regex.test(password),
+      hasLowercase: passwordRequirements.hasLowercase.regex.test(password),
+      hasNumber: passwordRequirements.hasNumber.regex.test(password),
+    };
+
+    const passedCount = Object.values(checks).filter(Boolean).length;
+    return { checks, passedCount, isValid: passedCount === 4 };
+  }, [password]);
+
   const handleSignUp = async (event) => {
     event.preventDefault();
 
     if (!fullName.trim() || !email.trim() || !password) {
       setMessage("Enter your name, email, and create a password.");
+      return;
+    }
+
+    if (!passwordStrength.isValid) {
+      setMessage("Your password doesn't meet all requirements.");
       return;
     }
 
@@ -94,9 +119,51 @@ export default function SignUp() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
+
+          {/* Password Strength Indicator */}
+          {password && (
+            <div className="mt-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="h-2 flex-1 rounded-full bg-[var(--app-border)]">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      passwordStrength.passedCount === 0
+                        ? "bg-red-500 w-1/4"
+                        : passwordStrength.passedCount === 1
+                          ? "bg-red-500 w-1/4"
+                          : passwordStrength.passedCount === 2
+                            ? "bg-yellow-500 w-1/2"
+                            : passwordStrength.passedCount === 3
+                              ? "bg-blue-500 w-3/4"
+                              : "bg-green-500 w-full"
+                    }`}
+                  />
+                </div>
+                <span className="text-xs font-medium uppercase tracking-[0.1em] text-[var(--text-secondary)]">
+                  {passwordStrength.passedCount}/4
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                {Object.entries(passwordRequirements).map(([key, { label }]) => (
+                  <div
+                    key={key}
+                    className="flex items-center gap-2 text-xs text-[var(--text-secondary)]"
+                  >
+                    {passwordStrength.checks[key] ? (
+                      <Check size={16} className="text-green-600" />
+                    ) : (
+                      <X size={16} className="text-red-500" />
+                    )}
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" disabled={password && !passwordStrength.isValid}>
           Get Started
         </Button>
       </form>

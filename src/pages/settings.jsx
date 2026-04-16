@@ -77,6 +77,7 @@ export default function Settings() {
           icon={<BookOpenCheck size={20} />}
           title="Manage Subjects"
           description="Add, edit or remove classes"
+          onClick={() => navigate("/subjects")}
         />
         <SettingsRow
           icon={<Bell size={20} />}
