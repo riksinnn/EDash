@@ -5,7 +5,7 @@ export default function About() {
     {
       title: "1. Introduction",
       content:
-        "Welcome to EDash, an academic dashboard designed to help students manage their schedules, tasks, and subjects efficiently. By using our application, you agree to these terms and conditions.",
+        "Welcome to EDash, an academic dashboard designed to help students manage their schedules, tasks, and subjects efficiently. By using our web app, you agree to these terms and conditions.",
     },
     {
       title: "2. User Accounts",
