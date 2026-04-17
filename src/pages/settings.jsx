@@ -92,8 +92,14 @@ export default function Settings() {
           icon={<Shield size={20} />}
           title="Security"
           description="Password & authentication"
+          onClick={() => navigate("/security")}
         />
-        <SettingsRow icon={<Info size={20} />} title="About" description="EDash v1.0.0" />
+        <SettingsRow
+          icon={<Info size={20} />}
+          title="About"
+          description="Terms & Conditions"
+          onClick={() => navigate("/about")}
+        />
         <SettingsRow
           icon={<LogOut size={20} />}
           title="Log Out"
