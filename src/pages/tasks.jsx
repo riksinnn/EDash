@@ -34,11 +34,13 @@ export default function Tasks() {
 
       if (tasksError) {
         console.error("Error fetching tasks:", tasksError);
-      } else {
+      } else if (tasksData) {
         const formattedTasks = tasksData.map((task) => ({
           id: task.id,
           title: task.title,
-          status: task.status.charAt(0).toUpperCase() + task.status.slice(1),
+          status: task.status
+            ? task.status.charAt(0).toUpperCase() + task.status.slice(1)
+            : "Ongoing",
           subject: task.subjects?.name || "No subject",
         }));
         setTasks(formattedTasks);

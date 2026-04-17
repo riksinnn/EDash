@@ -37,7 +37,7 @@ export default function Schedule() {
 
       if (scheduleError) {
         console.error("Error fetching schedule:", scheduleError);
-      } else {
+      } else if (scheduleData) {
         const formattedEntries = scheduleData.map((entry) => ({
           id: entry.id,
           day: days[entry.day_of_week],
@@ -77,8 +77,8 @@ export default function Schedule() {
       user_id: user.id,
       subject_id: form.subject_id,
       day_of_week: dayMap[form.day],
-      start_time: form.startTime,
-      end_time: form.endTime,
+      start_time: form.start_time,
+      end_time: form.end_time,
     };
 
     const { data, error } = await supabase
