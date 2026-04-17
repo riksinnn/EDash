@@ -138,9 +138,11 @@ export default function Tasks() {
       </section>
 
       <Card className="flex min-h-[270px] flex-col items-center justify-center border-dashed border-[#e3dbcc] bg-[#f7f4ee]/70 p-8 text-center shadow-none">
-        <ListChecks size={54} className="text-[#afb4a8]" />
         {visibleTasks.length === 0 ? (
-          <p className="mt-5 text-2xl text-[#6e7c69]">No tasks yet. Add one to get started.</p>
+          <>
+            <ListChecks size={54} className="text-[#afb4a8]" />
+            <p className="mt-5 text-2xl text-[#6e7c69]">No tasks yet. Add one to get started.</p>
+          </>
         ) : (
           <div className="mt-6 w-full space-y-3 text-left">
             {visibleTasks.map((task) => (
