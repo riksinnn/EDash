@@ -88,18 +88,18 @@ export default function Settings() {
 
       <SectionTitle>Account</SectionTitle>
       <SettingsGroup>
-        <SettingsRow
+        {/* <SettingsRow
           icon={<Shield size={20} />}
           title="Security"
           description="Password & authentication"
           onClick={() => navigate("/security")}
-        />
-        <SettingsRow
+        /> */}
+        {/* <SettingsRow
           icon={<Info size={20} />}
           title="About"
           description="Terms & Conditions"
           onClick={() => navigate("/about")}
-        />
+        /> */}
         <SettingsRow
           icon={<LogOut size={20} />}
           title="Log Out"

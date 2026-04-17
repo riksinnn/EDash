@@ -8,8 +8,8 @@ import Schedule from "./pages/schedule";
 import Tasks from "./pages/tasks";
 import Subjects from "./pages/subjects";
 import Settings from "./pages/settings";
-import About from "./pages/About";
-import Security from "./pages/Security";
+// import About from "./pages/About";
+// import Security from "./pages/Security";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 import Logout from "./pages/auth/logout";
@@ -109,22 +109,22 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* <Route
               path="/about"
               element={
                 <ProtectedRoute>
                   <About />
                 </ProtectedRoute>
               }
-            />
-            <Route
+            /> */}
+            {/* <Route
               path="/security"
               element={
                 <ProtectedRoute>
                   <Security />
                 </ProtectedRoute>
               }
-            />
+            /> */}
           </Routes>
         </Router>
       </AuthProvider>
