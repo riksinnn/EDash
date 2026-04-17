@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ListChecks, Plus } from "lucide-react";
 import { AlertDialog } from "../components/ui/alert-dialog";
 import { Button } from "../components/ui/button";
@@ -14,12 +14,52 @@ export default function Tasks() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [tasks, setTasks] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({
     title: "",
     status: "Ongoing",
-    subject: "No subject",
+    subject_id: "",
   });
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      if (!user?.id) return;
+
+      // Fetch tasks with subject names
+      const { data: tasksData, error: tasksError } = await supabase
+        .from("tasks")
+        .select("id, title, status, subjects ( name )")
+        .eq("user_id", user.id);
+
+      if (tasksError) {
+        console.error("Error fetching tasks:", tasksError);
+      } else {
+        const formattedTasks = tasksData.map((task) => ({
+          id: task.id,
+          title: task.title,
+          status: task.status.charAt(0).toUpperCase() + task.status.slice(1),
+          subject: task.subjects?.name || "No subject",
+        }));
+        setTasks(formattedTasks);
+      }
+
+      // Fetch subjects for the dropdown
+      const { data: subjectsData, error: subjectsError } = await supabase
+        .from("subjects")
+        .select("id, name")
+        .eq("user_id", user.id)
+        .order("name");
+
+      if (subjectsError) {
+        console.error("Error fetching subjects:", subjectsError);
+      } else {
+        setSubjects(subjectsData);
+      }
+    };
+
+    loadInitialData();
+  }, [user]);
 
   const visibleTasks = useMemo(() => {
     if (activeFilter === "All") return tasks;
@@ -30,10 +70,10 @@ export default function Tasks() {
     if (!form.title.trim() || !user) return;
 
     const taskPayload = {
-      user_id: user.uid,
+      user_id: user.id,
       title: form.title.trim(),
       status: form.status.toLowerCase(),
-      subject_id: null,
+      subject_id: form.subject_id || null,
     };
 
     const { data, error } = await supabase
@@ -48,16 +88,18 @@ export default function Tasks() {
       return;
     }
 
+    const selectedSubject = subjects.find((s) => s.id === form.subject_id);
+
     setTasks((current) => [
       ...current,
       {
-        id: data?.id ?? crypto.randomUUID(),
+        id: data.id,
         title: form.title.trim(),
         status: form.status,
-        subject: form.subject,
+        subject: selectedSubject?.name || "No subject",
       },
     ]);
-    setForm({ title: "", status: "Ongoing", subject: "No subject" });
+    setForm({ title: "", status: "Ongoing", subject_id: "" });
     setMessage("");
     setIsDialogOpen(false);
   };
@@ -140,16 +182,27 @@ export default function Tasks() {
               onChange={(value) =>
                 setForm((current) => ({ ...current, status: value }))
               }
-              options={["Ongoing", "Urgent", "Done"]}
-            />
+            >
+              {["Ongoing", "Urgent", "Done"].map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </SelectField>
             <SelectField
               label="Subject (Optional)"
-              value={form.subject}
+              value={form.subject_id}
               onChange={(value) =>
-                setForm((current) => ({ ...current, subject: value }))
+                setForm((current) => ({ ...current, subject_id: value }))
               }
-              options={["No subject", "Advanced Mathematics", "History", "Science"]}
-            />
+            >
+              <option value="">No subject</option>
+              {subjects.map((subject) => (
+                <option key={subject.id} value={subject.id}>
+                  {subject.name}
+                </option>
+              ))}
+            </SelectField>
           </div>
 
           {message ? <p className="text-sm text-red-600">{message}</p> : null}
@@ -166,7 +219,7 @@ export default function Tasks() {
   );
 }
 
-function SelectField({ label, value, onChange, options }) {
+function SelectField({ label, value, onChange, children }) {
   return (
     <label className="block">
       <span className="mb-2 block text-xl font-medium text-[#354737]">{label}</span>
@@ -176,11 +229,7 @@ function SelectField({ label, value, onChange, options }) {
           onChange={(event) => onChange(event.target.value)}
           className="w-full appearance-none rounded-2xl border border-[#ddd4c3] bg-[#f8f5ef] px-4 py-3 pr-11 text-xl text-[#425642] shadow-[0_5px_18px_rgba(75,84,63,0.08)] outline-none focus:border-[#89a171]"
         >
-          {options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
+          {children}
         </select>
         <ChevronDown
           size={18}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, Clock3, Plus } from "lucide-react";
 import { AlertDialog } from "../components/ui/alert-dialog";
 import { Button } from "../components/ui/button";
@@ -7,19 +7,63 @@ import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 
 const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const dayMap = {
+  SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6,
+};
 
 export default function Schedule() {
   const { user } = useAuth();
   const [selectedDay, setSelectedDay] = useState("WED");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [entries, setEntries] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({
-    subject: "Select subject",
+    subject_id: "",
     day: "WED",
-    startTime: "09:00 AM",
-    endTime: "10:00 AM",
+    start_time: "09:00",
+    end_time: "10:00",
   });
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      if (!user?.id) return;
+
+      // Fetch schedule entries with subject names
+      const { data: scheduleData, error: scheduleError } = await supabase
+        .from("schedule")
+        .select("id, day_of_week, start_time, end_time, subjects ( name )")
+        .eq("user_id", user.id);
+
+      if (scheduleError) {
+        console.error("Error fetching schedule:", scheduleError);
+      } else {
+        const formattedEntries = scheduleData.map((entry) => ({
+          id: entry.id,
+          day: days[entry.day_of_week],
+          subject: entry.subjects?.name || "Unnamed Class",
+          startTime: entry.start_time,
+          endTime: entry.end_time,
+        }));
+        setEntries(formattedEntries);
+      }
+
+      // Fetch subjects for the dropdown
+      const { data: subjectsData, error: subjectsError } = await supabase
+        .from("subjects")
+        .select("id, name")
+        .eq("user_id", user.id)
+        .order("name");
+
+      if (subjectsError) {
+        console.error("Error fetching subjects:", subjectsError);
+      } else {
+        setSubjects(subjectsData);
+      }
+    };
+
+    loadInitialData();
+  }, [user]);
 
   const dayEntries = useMemo(
     () => entries.filter((entry) => entry.day === selectedDay),
@@ -27,12 +71,12 @@ export default function Schedule() {
   );
 
   const handleSchedule = async () => {
-    if (form.subject === "Select subject" || !user) return;
+    if (!form.subject_id || !user) return;
 
     const schedulePayload = {
-      user_id: user.uid,
-      subject_id: crypto.randomUUID(),
-      day_of_week: days.indexOf(form.day),
+      user_id: user.id,
+      subject_id: form.subject_id,
+      day_of_week: dayMap[form.day],
       start_time: form.startTime,
       end_time: form.endTime,
     };
@@ -49,11 +93,16 @@ export default function Schedule() {
       return;
     }
 
+    const selectedSubject = subjects.find((s) => s.id === form.subject_id);
+
     setEntries((current) => [
       ...current,
       {
-        id: data?.id ?? crypto.randomUUID(),
-        ...form,
+        id: data.id,
+        day: form.day,
+        subject: selectedSubject?.name || "Unnamed Class",
+        startTime: form.startTime,
+        endTime: form.endTime,
       },
     ]);
     setSelectedDay(form.day);
@@ -132,33 +181,44 @@ export default function Schedule() {
         <div className="space-y-6">
           <SelectField
             label="Subject"
-            value={form.subject}
+            value={form.subject_id}
             onChange={(value) =>
-              setForm((current) => ({ ...current, subject: value }))
+              setForm((current) => ({ ...current, subject_id: value }))
             }
-            options={["Select subject", "Advanced Mathematics", "History", "Science"]}
-          />
+          >
+            <option value="">Select subject</option>
+            {subjects.map((subject) => (
+              <option key={subject.id} value={subject.id}>
+                {subject.name}
+              </option>
+            ))}
+          </SelectField>
 
           <SelectField
             label="Day"
             value={form.day}
             onChange={(value) => setForm((current) => ({ ...current, day: value }))}
-            options={days}
-          />
+          >
+            {days.map((day) => (
+              <option key={day} value={day}>
+                {day}
+              </option>
+            ))}
+          </SelectField>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <TimeField
               label="Start Time"
-              value={form.startTime}
+              value={form.start_time}
               onChange={(value) =>
-                setForm((current) => ({ ...current, startTime: value }))
+                setForm((current) => ({ ...current, start_time: value }))
               }
             />
             <TimeField
               label="End Time"
-              value={form.endTime}
+              value={form.end_time}
               onChange={(value) =>
-                setForm((current) => ({ ...current, endTime: value }))
+                setForm((current) => ({ ...current, end_time: value }))
               }
             />
           </div>
@@ -177,7 +237,7 @@ export default function Schedule() {
   );
 }
 
-function SelectField({ label, value, onChange, options }) {
+function SelectField({ label, value, onChange, children }) {
   return (
     <label className="block">
       <span className="mb-2 block text-xl font-medium text-[#354737]">{label}</span>
@@ -187,11 +247,7 @@ function SelectField({ label, value, onChange, options }) {
           onChange={(event) => onChange(event.target.value)}
           className="w-full appearance-none rounded-2xl border border-[#ddd4c3] bg-[#f8f5ef] px-4 py-3 pr-11 text-xl text-[#425642] shadow-[0_5px_18px_rgba(75,84,63,0.08)] outline-none focus:border-[#89a171]"
         >
-          {options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
+          {children}
         </select>
         <ChevronDown
           size={18}
@@ -208,6 +264,7 @@ function TimeField({ label, value, onChange }) {
       <span className="mb-2 block text-xl font-medium text-[#354737]">{label}</span>
       <span className="relative block">
         <input
+          type="time"
           value={value}
           onChange={(event) => onChange(event.target.value)}
           className="w-full rounded-2xl border border-[#ddd4c3] bg-[#f8f5ef] px-4 py-3 pr-11 text-xl text-[#425642] shadow-[0_5px_18px_rgba(75,84,63,0.08)] outline-none focus:border-[#89a171]"
