@@ -13,17 +13,28 @@ const dayMap = {
 
 export default function Schedule() {
   const { user } = useAuth();
-  const [selectedDay, setSelectedDay] = useState("WED");
+  const [selectedDay, setSelectedDay] = useState(days[new Date().getDay()]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [entries, setEntries] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({
     subject_id: "",
-    day: "WED",
-    start_time: "09:00",
-    end_time: "10:00",
+    day: days[new Date().getDay()],
+    start_time: "",
+    end_time: "",
   });
+
+  const formatTime = (timeString) => {
+    if (!timeString) return "";
+    const [hours, minutes] = timeString.split(":");
+    if (isNaN(parseInt(hours)) || isNaN(parseInt(minutes))) return ""; // Handle invalid time
+
+    const h = parseInt(hours, 10);
+    const ampm = h >= 12 ? "PM" : "AM";
+    const formattedHours = h % 12 || 12; // Convert 0 to 12 for 12 AM
+    return `${formattedHours}:${minutes} ${ampm}`;
+  };
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -101,8 +112,8 @@ export default function Schedule() {
         id: data.id,
         day: form.day,
         subject: selectedSubject?.name || "Unnamed Class",
-        startTime: form.startTime,
-        endTime: form.endTime,
+        startTime: form.start_time,
+        endTime: form.end_time,
       },
     ]);
     setSelectedDay(form.day);
@@ -164,7 +175,7 @@ export default function Schedule() {
                 >
                   <p className="text-2xl font-semibold text-[#354737]">{entry.subject}</p>
                   <p className="mt-2 text-lg text-[#6e7c69]">
-                    {entry.startTime} - {entry.endTime}
+                    {formatTime(entry.startTime)} - {formatTime(entry.endTime)}
                   </p>
                 </div>
               ))}
