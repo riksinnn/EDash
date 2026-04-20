@@ -77,7 +77,15 @@ export default function Schedule() {
   }, [user]);
 
   const dayEntries = useMemo(
-    () => entries.filter((entry) => entry.day === selectedDay),
+    () =>
+      entries
+        .filter((entry) => entry.day === selectedDay)
+        .sort((a, b) => {
+          // Defensively handle cases where startTime might be null or undefined to prevent crash
+          const timeA = a.startTime || "00:00";
+          const timeB = b.startTime || "00:00";
+          return timeA.localeCompare(timeB);
+        }),
     [entries, selectedDay],
   );
 
