@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Clock3, Plus } from "lucide-react";
+import { ChevronDown, Clock3, Plus, Edit, Trash2 } from "lucide-react";
 import { AlertDialog } from "../components/ui/alert-dialog";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
