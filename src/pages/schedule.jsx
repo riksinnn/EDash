@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Clock3, Plus, Edit, Trash2 } from "lucide-react";
-import { AlertDialog } from "../components/ui/alert-dialog";
-import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
+import { Plus, Edit, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
+import { Button } from "../components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Input } from "../components/ui/input";
+import { Card } from "../components/ui/card";
 
 const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const dayMap = {
@@ -18,9 +20,10 @@ export default function Schedule() {
   const [entries, setEntries] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [message, setMessage] = useState("");
+  const [editingEntry, setEditingEntry] = useState(null);
   const [form, setForm] = useState({
-    subject_id: "",
     day: days[new Date().getDay()],
+    subject_id: "",
     start_time: "",
     end_time: "",
   });
@@ -114,6 +117,10 @@ export default function Schedule() {
     }
 
     const conflictingEntry = entries.find((entry) => {
+      // Don't compare an entry against itself while editing
+      if (editingEntry && entry.id === editingEntry.id) {
+        return false;
+      }
       if (entry.day !== form.day) {
         return false;
       }
@@ -130,6 +137,14 @@ export default function Schedule() {
     }
     // --- End Validation ---
 
+    if (editingEntry) {
+      await handleUpdateSchedule();
+    } else {
+      await handleCreateSchedule();
+    }
+  };
+
+  const handleCreateSchedule = async () => {
     const schedulePayload = {
       user_id: user.id,
       subject_id: form.subject_id,
@@ -163,8 +178,91 @@ export default function Schedule() {
       },
     ]);
     setSelectedDay(form.day);
-    setMessage("");
+    closeDialog();
+  };
+
+  const handleUpdateSchedule = async () => {
+    if (!form.subject_id || !user || !editingEntry) return;
+
+    const schedulePayload = {
+      user_id: user.id,
+      subject_id: form.subject_id,
+      day_of_week: dayMap[form.day],
+      start_time: form.start_time,
+      end_time: form.end_time,
+    };
+
+    const { data, error } = await supabase
+      .from("schedule")
+      .update(schedulePayload)
+      .eq("id", editingEntry.id)
+      .select("*, subjects(name)")
+      .single();
+
+    if (error) {
+      console.error("Error updating schedule:", error);
+      setMessage("We couldn't update that class yet.");
+      return;
+    }
+
+    setEntries((current) =>
+      current.map((entry) =>
+        entry.id === editingEntry.id
+          ? {
+              id: data.id,
+              day: days[data.day_of_week],
+              subject: data.subjects?.name || "Unnamed Class",
+              startTime: data.start_time,
+              endTime: data.end_time,
+            }
+          : entry,
+      ),
+    );
+
+    setSelectedDay(form.day);
+    closeDialog();
+  };
+
+  const handleDeleteSchedule = async (entryId) => {
+    if (!window.confirm("Are you sure you want to delete this class?")) return;
+
+    const { error } = await supabase.from("schedule").delete().eq("id", entryId);
+
+    if (error) {
+      console.error("Error deleting schedule entry:", error);
+      alert("Could not delete the class.");
+    } else {
+      setEntries((current) => current.filter((entry) => entry.id !== entryId));
+    }
+  };
+
+  const openEditDialog = (entry) => {
+    setEditingEntry(entry);
+    setForm({
+      day: entry.day,
+      subject_id: subjects.find((s) => s.name === entry.subject)?.id || "",
+      start_time: entry.startTime,
+      end_time: entry.endTime,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const openNewDialog = () => {
+    setEditingEntry(null);
+    setForm({
+      day: selectedDay,
+      subject_id: "",
+      start_time: "",
+      end_time: "",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const closeDialog = () => {
     setIsDialogOpen(false);
+    setEditingEntry(null);
+    setMessage("");
+    setForm({ day: selectedDay, subject_id: "", start_time: "", end_time: "" });
   };
 
   return (
@@ -192,13 +290,9 @@ export default function Schedule() {
           })}
         </div>
 
-        <Button
-          variant="icon"
-          className="h-12 w-12"
-          onClick={() => setIsDialogOpen(true)}
-          aria-label="Schedule class"
-        >
-          <Plus size={22} />
+        <Button onClick={openNewDialog} className="flex items-center gap-2">
+          <Plus size={16} />
+          <span>Add Class</span>
         </Button>
       </section>
 
@@ -240,107 +334,66 @@ export default function Schedule() {
         </Card>
       </section>
 
-      <AlertDialog
-        open={isDialogOpen}
-        title="Schedule Class"
-        onClose={() => setIsDialogOpen(false)}
-      >
-        <div className="space-y-6">
-          <SelectField
-            label="Subject"
-            value={form.subject_id}
-            onChange={(value) =>
-              setForm((current) => ({ ...current, subject_id: value }))
-            }
-          >
-            <option value="">Select subject</option>
-            {subjects.map((subject) => (
-              <option key={subject.id} value={subject.id}>
-                {subject.name}
-              </option>
-            ))}
-          </SelectField>
-
-          <SelectField
-            label="Day"
-            value={form.day}
-            onChange={(value) => setForm((current) => ({ ...current, day: value }))}
-          >
-            {days.map((day) => (
-              <option key={day} value={day}>
-                {day}
-              </option>
-            ))}
-          </SelectField>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <TimeField
-              label="Start Time"
-              value={form.start_time}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, start_time: value }))
-              }
-            />
-            <TimeField
-              label="End Time"
-              value={form.end_time}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, end_time: value }))
-              }
-            />
-          </div>
-
-          {message ? <p className="text-sm text-red-600">{message}</p> : null}
-
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
+      <Dialog open={isDialogOpen} onOpenChange={closeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingEntry ? "Edit Class" : "Add a new class"}</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Select value={form.day} onValueChange={(value) => setForm({ ...form, day: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Day" />
+                </SelectTrigger>
+                <SelectContent>
+                  {days.map((day) => (
+                    <SelectItem key={day} value={day}>
+                      {day}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={form.subject_id}
+                onValueChange={(value) => setForm({ ...form, subject_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select subject" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjects.map((subject) => (
+                    <SelectItem key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Start Time</label>
+                <Input
+                  type="time"
+                  value={form.start_time}
+                  onChange={(e) => setForm({ ...form, start_time: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">End Time</label>
+                <Input
+                  type="time"
+                  value={form.end_time}
+                  onChange={(e) => setForm({ ...form, end_time: e.target.value })}
+                />
+              </div>
+            </div>
+            {message && <p className="text-sm text-red-500">{message}</p>}
+            <Button onClick={handleSave} className="w-full">
+              {editingEntry ? "Save Changes" : "Save Class"}
             </Button>
-            <Button onClick={handleSchedule}>Schedule</Button>
           </div>
-        </div>
-      </AlertDialog>
+        </DialogContent>
+      </Dialog>
     </div>
-  );
-}
-
-function SelectField({ label, value, onChange, children }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-xl font-medium text-[#354737]">{label}</span>
-      <span className="relative block">
-        <select
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="w-full appearance-none rounded-2xl border border-[#ddd4c3] bg-[#f8f5ef] px-4 py-3 pr-11 text-xl text-[#425642] shadow-[0_5px_18px_rgba(75,84,63,0.08)] outline-none focus:border-[#89a171]"
-        >
-          {children}
-        </select>
-        <ChevronDown
-          size={18}
-          className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#7e8c7a]"
-        />
-      </span>
-    </label>
-  );
-}
-
-function TimeField({ label, value, onChange }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-xl font-medium text-[#354737]">{label}</span>
-      <span className="relative block">
-        <input
-          type="time"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="w-full rounded-2xl border border-[#ddd4c3] bg-[#f8f5ef] px-4 py-3 pr-11 text-xl text-[#425642] shadow-[0_5px_18px_rgba(75,84,63,0.08)] outline-none focus:border-[#89a171]"
-        />
-        <Clock3
-          size={18}
-          className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#1e211c]"
-        />
-      </span>
-    </label>
   );
 }
