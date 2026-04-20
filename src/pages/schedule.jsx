@@ -85,6 +85,11 @@ export default function Schedule() {
     if (!form.subject_id || !user) return;
 
     // --- Time Overlap Validation ---
+    if (!form.start_time || !form.end_time) {
+      setMessage("Please select a start and end time.");
+      return;
+    }
+
     const timeToDate = (time) => {
       const d = new Date();
       const [h, m] = time.split(":");
