@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
-import { ChevronRight, Circle, ClipboardCheck, Clock3 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ChevronRight, Circle, ClipboardCheck, Clock3, ListChecks } from "lucide-react";
 import { format } from "date-fns";
+import { useAuth } from "../context/AuthContext";
+import { supabase } from "../lib/supabase";
 import { Card } from "../components/ui/card";
 
-const stats = [
-  { value: "0", label: "Classes Today", color: "text-[var(--accent-strong)]" },
-  { value: "0", label: "Urgent Tasks", color: "text-[#cf4c4a]" },
-  { value: "0", label: "Ongoing Tasks", color: "text-[var(--text-primary)]" },
-];
+const formatTime = (timeString) => {
+  if (!timeString) return "";
+  const [hours, minutes] = timeString.split(":");
+  if (isNaN(parseInt(hours)) || isNaN(parseInt(minutes))) return "";
+
+  const h = parseInt(hours, 10);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const formattedHours = h % 12 || 12;
+  return `${formattedHours}:${minutes} ${ampm}`;
+};
 
 function StatCard({ value, label, color }) {
   return (
@@ -21,12 +29,103 @@ function StatCard({ value, label, color }) {
 }
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [schedule, setSchedule] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [happeningNow, setHappeningNow] = useState(null);
+  const [upNext, setUpNext] = useState(null);
+  const [dashboardStats, setDashboardStats] = useState([
+    { value: "0", label: "Classes Today", color: "text-[var(--accent-strong)]" },
+    { value: "0", label: "Urgent Tasks", color: "text-[#cf4c4a]" },
+    { value: "0", label: "Ongoing Tasks", color: "text-[var(--text-primary)]" },
+  ]);
+  const [priorityTask, setPriorityTask] = useState(null);
 
   useEffect(() => {
     const timer = window.setInterval(() => setCurrentTime(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user) return;
+
+      const today = new Date().getDay();
+
+      const { data: scheduleData, error: scheduleError } = await supabase
+        .from("schedule")
+        .select("*, subjects(name)")
+        .eq("user_id", user.id)
+        .eq("day_of_week", today);
+
+      if (scheduleError) {
+        console.error("Error fetching schedule:", scheduleError);
+      } else {
+        setSchedule(scheduleData || []);
+      }
+
+      const { data: tasksData, error: tasksError } = await supabase
+        .from("tasks")
+        .select("*, subjects(name)")
+        .eq("user_id", user.id)
+        .not("status", "eq", "completed");
+
+      if (tasksError) {
+        console.error("Error fetching tasks:", tasksError);
+      } else {
+        const tasks = tasksData || [];
+        setTasks(tasks);
+        const firstOngoingTask = tasks.find(
+          (task) => task.status && task.status.toLowerCase() === "ongoing"
+        );
+        setPriorityTask(firstOngoingTask || null);
+      }
+    };
+
+    fetchData();
+  }, [user]);
+
+  useEffect(() => {
+    const timeToDate = (timeString) => {
+      if (!timeString) return new Date();
+      const [hours, minutes] = timeString.split(":");
+      const date = new Date();
+      date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+      return date;
+    };
+
+    const sortedSchedule = [...schedule].sort(
+      (a, b) => timeToDate(a.start_time) - timeToDate(b.start_time)
+    );
+
+    const now = currentTime;
+    const currentClass = sortedSchedule.find((c) => {
+      const startTime = timeToDate(c.start_time);
+      const endTime = timeToDate(c.end_time);
+      return now >= startTime && now <= endTime;
+    });
+    setHappeningNow(currentClass || null);
+
+    let nextClass = null;
+    if (!currentClass) {
+      nextClass = sortedSchedule.find((c) => timeToDate(c.start_time) > now);
+    }
+    setUpNext(nextClass || null);
+
+    const ongoingTasksCount = tasks.filter(
+      (t) => t.status && t.status.toLowerCase() === "ongoing"
+    ).length;
+    
+    // NOTE: "Urgent" status is not yet implemented.
+    const urgentTasksCount = 0; 
+
+    setDashboardStats([
+      { value: schedule.length, label: "Classes Today", color: "text-[var(--accent-strong)]" },
+      { value: urgentTasksCount, label: "Urgent Tasks", color: "text-[#cf4c4a]" },
+      { value: ongoingTasksCount, label: "Ongoing Tasks", color: "text-[var(--text-primary)]" },
+    ]);
+  }, [currentTime, schedule, tasks]);
 
   return (
     <div className="space-y-7">
@@ -55,8 +154,25 @@ export default function Dashboard() {
             <span>Happening Now</span>
           </div>
           <div className="flex min-h-[170px] flex-col items-center justify-center text-center">
-            <p className="text-4xl font-semibold text-[var(--text-primary)]">No class right now</p>
-            <p className="mt-3 text-2xl text-[var(--text-secondary)]">Enjoy your free time!</p>
+            {happeningNow ? (
+              <>
+                <p className="text-4xl font-semibold text-[var(--text-primary)]">
+                  {happeningNow.subjects.name}
+                </p>
+                <p className="mt-3 text-2xl text-[var(--text-secondary)]">
+                  {formatTime(happeningNow.start_time)} - {formatTime(happeningNow.end_time)}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-4xl font-semibold text-[var(--text-primary)]">
+                  No class right now
+                </p>
+                <p className="mt-3 text-2xl text-[var(--text-secondary)]">
+                  Enjoy your free time!
+                </p>
+              </>
+            )}
           </div>
         </Card>
 
@@ -64,14 +180,27 @@ export default function Dashboard() {
           <h3 className="text-xl font-semibold uppercase tracking-[0.12em] text-[var(--text-secondary)]">
             Up Next
           </h3>
-          <div className="flex min-h-[170px] items-center justify-center text-center">
-            <p className="text-3xl text-[var(--text-secondary)]">No more classes today.</p>
+          <div className="flex min-h-[170px] flex-col items-center justify-center text-center">
+            {upNext ? (
+              <>
+                <p className="text-4xl font-semibold text-[var(--text-primary)]">
+                  {upNext.subjects.name}
+                </p>
+                <p className="mt-3 text-2xl text-[var(--text-secondary)]">
+                  {formatTime(upNext.start_time)} - {formatTime(upNext.end_time)}
+                </p>
+              </>
+            ) : (
+              <p className="text-3xl text-[var(--text-secondary)]">
+                No more classes today.
+              </p>
+            )}
           </div>
         </Card>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
-        {stats.map((stat) => (
+        {dashboardStats.map((stat) => (
           <StatCard key={stat.label} {...stat} />
         ))}
       </section>
@@ -81,16 +210,30 @@ export default function Dashboard() {
           <h3 className="font-serif text-4xl font-semibold text-[var(--text-primary)]">
             Priority Tasks
           </h3>
-          <button className="inline-flex items-center gap-2 text-2xl font-medium text-[var(--accent-strong)] transition-opacity hover:opacity-75">
+          <Link
+            to="/tasks"
+            className="inline-flex items-center gap-2 text-2xl font-medium text-[var(--accent-strong)] transition-opacity hover:opacity-75"
+          >
             <span>View all</span>
             <ChevronRight size={20} />
-          </button>
+          </Link>
         </div>
 
-        <Card className="flex min-h-[190px] flex-col items-center justify-center border-dashed border-[var(--app-border)] p-6 text-center shadow-none">
-          <ClipboardCheck size={46} className="text-[var(--text-muted)]" />
-          <p className="mt-4 text-2xl text-[var(--text-secondary)]">All caught up for today!</p>
-        </Card>
+        {priorityTask ? (
+          <Card className="p-5">
+            <p className="text-xl font-semibold text-[#354737]">{priorityTask.title}</p>
+            <p className="mt-1 text-sm font-medium uppercase tracking-wider text-[#6e7c69]">
+              {priorityTask.status} &bull; {priorityTask.subjects?.name || "No Subject"}
+            </p>
+          </Card>
+        ) : (
+          <Card className="flex min-h-[190px] flex-col items-center justify-center border-dashed border-[var(--app-border)] p-6 text-center shadow-none">
+            <ListChecks size={46} className="text-[var(--text-muted)]" />
+            <p className="mt-4 text-2xl text-[var(--text-secondary)]">
+              All caught up for today!
+            </p>
+          </Card>
+        )}
       </section>
     </div>
   );

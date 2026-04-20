@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ListChecks, Plus } from "lucide-react";
+import { ChevronDown, ListChecks, Plus, Edit, Trash2 } from "lucide-react";
 import { AlertDialog } from "../components/ui/alert-dialog";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -16,6 +16,7 @@ export default function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [message, setMessage] = useState("");
+  const [editingTask, setEditingTask] = useState(null); // State to hold the task being edited
   const [form, setForm] = useState({
     title: "",
     status: "Ongoing",
@@ -106,6 +107,88 @@ export default function Tasks() {
     setIsDialogOpen(false);
   };
 
+  const handleUpdateTask = async () => {
+    if (!form.title.trim() || !user || !editingTask) return;
+
+    const taskPayload = {
+      title: form.title.trim(),
+      status: form.status.toLowerCase(),
+      subject_id: form.subject_id || null,
+    };
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .update(taskPayload)
+      .eq("id", editingTask.id)
+      .select("*, subjects(name)")
+      .single();
+
+    if (error) {
+      console.error("Error updating task:", error);
+      setMessage("We couldn't update that task yet.");
+      return;
+    }
+
+    setTasks((current) =>
+      current.map((task) =>
+        task.id === editingTask.id
+          ? {
+              id: data.id,
+              title: data.title,
+              status: data.status.charAt(0).toUpperCase() + data.status.slice(1),
+              subject: data.subjects?.name || "No subject",
+            }
+          : task
+      )
+    );
+
+    closeDialog();
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    if (!window.confirm("Are you sure you want to delete this task?")) return;
+
+    const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+
+    if (error) {
+      console.error("Error deleting task:", error);
+      alert("Could not delete the task.");
+    } else {
+      setTasks((current) => current.filter((task) => task.id !== taskId));
+    }
+  };
+
+  const openEditDialog = (task) => {
+    setEditingTask(task);
+    setForm({
+      title: task.title,
+      status: task.status,
+      subject_id: subjects.find((s) => s.name === task.subject)?.id || "",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const openNewDialog = () => {
+    setEditingTask(null);
+    setForm({ title: "", status: "Ongoing", subject_id: "" });
+    setIsDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+    setEditingTask(null);
+    setMessage("");
+    setForm({ title: "", status: "Ongoing", subject_id: "" });
+  };
+
+  const handleSave = () => {
+    if (editingTask) {
+      handleUpdateTask();
+    } else {
+      handleCreateTask();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <section className="flex flex-wrap items-center justify-between gap-4">
@@ -130,7 +213,7 @@ export default function Tasks() {
         <Button
           variant="icon"
           className="h-12 w-12"
-          onClick={() => setIsDialogOpen(true)}
+          onClick={openNewDialog}
           aria-label="Add task"
         >
           <Plus size={22} />
@@ -148,12 +231,22 @@ export default function Tasks() {
             {visibleTasks.map((task) => (
               <div
                 key={task.id}
-                className="rounded-2xl border border-[#ddd4c3] bg-[#fbf9f4] px-4 py-3"
+                className="group flex items-center justify-between rounded-2xl border border-[#ddd4c3] bg-[#fbf9f4] px-4 py-3 transition-colors hover:border-gray-300"
               >
-                <p className="text-xl font-semibold text-[#354737]">{task.title}</p>
-                <p className="mt-1 text-sm uppercase tracking-[0.12em] text-[#7a8a77]">
-                  {task.status} • {task.subject}
-                </p>
+                <div>
+                  <p className="text-xl font-semibold text-[#354737]">{task.title}</p>
+                  <p className="mt-1 text-sm uppercase tracking-[0.12em] text-[#7a8a77]">
+                    {task.status} • {task.subject}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Button variant="ghost" size="icon" onClick={() => openEditDialog(task)}>
+                    <Edit size={18} className="text-gray-600" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)}>
+                    <Trash2 size={18} className="text-red-500" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -162,8 +255,8 @@ export default function Tasks() {
 
       <AlertDialog
         open={isDialogOpen}
-        title="New Task"
-        onClose={() => setIsDialogOpen(false)}
+        title={editingTask ? "Edit Task" : "New Task"}
+        onClose={closeDialog}
       >
         <div className="space-y-6">
           <div>
@@ -212,10 +305,10 @@ export default function Tasks() {
           {message ? <p className="text-sm text-red-600">{message}</p> : null}
 
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={closeDialog}>
               Cancel
             </Button>
-            <Button onClick={handleCreateTask}>Create Task</Button>
+            <Button onClick={handleSave}>{editingTask ? "Save Changes" : "Create Task"}</Button>
           </div>
         </div>
       </AlertDialog>

@@ -84,6 +84,39 @@ export default function Schedule() {
   const handleSchedule = async () => {
     if (!form.subject_id || !user) return;
 
+    // --- Time Overlap Validation ---
+    const timeToDate = (time) => {
+      const d = new Date();
+      const [h, m] = time.split(":");
+      d.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
+      return d;
+    };
+
+    const newStartTime = timeToDate(form.start_time);
+    const newEndTime = timeToDate(form.end_time);
+
+    if (newStartTime >= newEndTime) {
+      setMessage("End time must be after start time.");
+      return;
+    }
+
+    const conflictingEntry = entries.find((entry) => {
+      if (entry.day !== form.day) {
+        return false;
+      }
+      const existingStartTime = timeToDate(entry.startTime);
+      const existingEndTime = timeToDate(entry.endTime);
+
+      // Check for overlap: (StartA < EndB) and (EndA > StartB)
+      return newStartTime < existingEndTime && newEndTime > existingStartTime;
+    });
+
+    if (conflictingEntry) {
+      setMessage(`This time conflicts with "${conflictingEntry.subject}".`);
+      return;
+    }
+    // --- End Validation ---
+
     const schedulePayload = {
       user_id: user.id,
       subject_id: form.subject_id,
@@ -169,15 +202,25 @@ export default function Schedule() {
           ) : (
             <div className="space-y-4">
               {dayEntries.map((entry) => (
-                <div
+                <Card
                   key={entry.id}
-                  className="rounded-3xl border border-[#ddd4c3] bg-[#fbf9f4] p-5"
+                  className="group flex items-center justify-between rounded-3xl border border-[#ddd4c3] bg-[#fbf9f4] p-5 transition-all hover:border-[#c2b8a8]"
                 >
-                  <p className="text-2xl font-semibold text-[#354737]">{entry.subject}</p>
-                  <p className="mt-2 text-lg text-[#6e7c69]">
-                    {formatTime(entry.startTime)} - {formatTime(entry.endTime)}
-                  </p>
-                </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-[#354737]">{entry.subject}</p>
+                    <p className="mt-2 text-lg text-[#6e7c69]">
+                      {formatTime(entry.startTime)} - {formatTime(entry.endTime)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100">
+                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(entry)}>
+                      <Edit size={20} className="text-gray-500" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteSchedule(entry.id)}>
+                      <Trash2 size={20} className="text-red-500" />
+                    </Button>
+                  </div>
+                </Card>
               ))}
             </div>
           )}
