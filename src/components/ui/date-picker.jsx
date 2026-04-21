@@ -3,9 +3,9 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { DayPicker } from "react-day-picker";
 
+import { cn } from "../../lib/utils.jsx";
 import { Button } from "./button";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
-import { cn } from "../../lib/utils";
 
 export function DatePicker({ value, onChange, ...props }) {
   return (
