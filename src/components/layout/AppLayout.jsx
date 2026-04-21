@@ -1,10 +1,16 @@
 import { NavLink, useLocation } from "react-router-dom";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 import {
   CalendarDays,
   CheckSquare,
   House,
   Settings,
 } from "lucide-react";
+
+function cn(...inputs) {
+  return twMerge(clsx(inputs));
+}
 
 const navItems = [
   { label: "Home", path: "/dashboard", icon: House },
@@ -57,21 +63,21 @@ export default function AppLayout({ children }) {
                 key={label}
                 to={path}
                 className={({ isActive }) =>
-                  [
+                  cn(
                     "flex flex-col items-center gap-2 rounded-2xl px-3 py-2 text-xs font-medium transition-colors",
                     isActive
                       ? "text-[var(--accent)]"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-                  ].join(" ")
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  )
                 }
               >
                 {({ isActive }) => (
                   <>
                     <span
-                      className={[
+                      className={cn(
                         "rounded-2xl p-2 transition-colors",
-                        isActive ? "bg-[var(--accent-soft)]" : "bg-transparent",
-                      ].join(" ")}
+                        isActive ? "bg-[var(--accent-soft)]" : "bg-transparent"
+                      )}
                     >
                       <Icon size={20} strokeWidth={2.1} />
                     </span>

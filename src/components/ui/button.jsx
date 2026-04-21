@@ -1,3 +1,10 @@
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+function cn(...inputs) {
+  return twMerge(clsx(inputs));
+}
+
 export function Button({
   children,
   variant = "primary",
@@ -21,7 +28,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={[baseStyles, variants[variant], className].join(" ")}
+      className={cn(baseStyles, variants[variant], className)}
       {...props}
     >
       {children}

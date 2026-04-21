@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ListChecks, Plus, Edit, Trash2, Calendar } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 import { AlertDialog } from "../components/ui/alert-dialog";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -8,6 +10,11 @@ import { Input } from "../components/ui/input";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 import { DatePicker } from "../components/ui/date-picker";
+import { SelectField } from "../components/ui/SelectField";
+
+function cn(...inputs) {
+  return twMerge(clsx(inputs));
+}
 
 const filters = ["All", "Urgent", "Ongoing", "Done"];
 
@@ -216,12 +223,12 @@ export default function Tasks() {
               key={filter}
               type="button"
               onClick={() => setActiveFilter(filter)}
-              className={[
+              className={cn(
                 "rounded-[18px] px-6 py-3 text-xl font-medium transition-colors",
                 activeFilter === filter
                   ? "bg-[#f2eee6] text-[#354737]"
-                  : "text-[#5e6f5d] hover:bg-[#f4f0e7]",
-              ].join(" ")}
+                  : "text-[#5e6f5d] hover:bg-[#f4f0e7]"
+              )}
             >
               {filter}
             </button>
@@ -349,26 +356,5 @@ export default function Tasks() {
         </div>
       </AlertDialog>
     </div>
-  );
-}
-
-function SelectField({ label, value, onChange, children }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-xl font-medium text-[#354737]">{label}</span>
-      <span className="relative block">
-        <select
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="w-full appearance-none rounded-2xl border border-[#ddd4c3] bg-[#f8f5ef] px-4 py-3 pr-11 text-xl text-[#425642] shadow-[0_5px_18px_rgba(75,84,63,0.08)] outline-none focus:border-[#89a171]"
-        >
-          {children}
-        </select>
-        <ChevronDown
-          size={18}
-          className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#7e8c7a]"
-        />
-      </span>
-    </label>
   );
 }
