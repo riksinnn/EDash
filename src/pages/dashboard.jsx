@@ -135,17 +135,20 @@ export default function Dashboard() {
     );
 
     const now = currentTime;
+
+    const currentClass = sortedSchedule.find((c) => {
+      const startTime = timeToDate(c.start_time);
+      const endTime = timeToDate(c.end_time);
+      return now >= startTime && now <= endTime;
+    });
+
     const nextClass = sortedSchedule.find((c) => {
       const startTime = timeToDate(c.start_time);
       return startTime > now;
     });
-    setUpNext(nextClass || null);
 
-    if (currentClass) {
-      setHappeningNow(currentClass);
-    } else {
-      setHappeningNow(null);
-    }
+    setHappeningNow(currentClass || null);
+    setUpNext(nextClass || null);
 
     // Countdown logic
     let countdownInterval;
