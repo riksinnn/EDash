@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ListChecks, Plus, Edit, Trash2 } from "lucide-react";
+import { ChevronDown, ListChecks, Plus, Edit, Trash2, Calendar } from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { AlertDialog } from "../components/ui/alert-dialog";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
+import { DatePicker } from "../components/ui/date-picker";
 
 const filters = ["All", "Urgent", "Ongoing", "Done"];
 
@@ -21,6 +23,7 @@ export default function Tasks() {
     title: "",
     status: "Ongoing",
     subject_id: "",
+    deadline: null,
   });
 
   useEffect(() => {
@@ -30,7 +33,7 @@ export default function Tasks() {
       // Fetch tasks with subject names
       const { data: tasksData, error: tasksError } = await supabase
         .from("tasks")
-        .select("id, title, status, subjects ( name )")
+        .select("id, title, status, deadline, subjects ( name )")
         .eq("user_id", user.id);
 
       if (tasksError) {
@@ -43,6 +46,7 @@ export default function Tasks() {
             ? task.status.charAt(0).toUpperCase() + task.status.slice(1)
             : "Ongoing",
           subject: task.subjects?.name || "No subject",
+          deadline: task.deadline ? parseISO(task.deadline) : null,
         }));
         setTasks(formattedTasks);
       }
@@ -65,8 +69,17 @@ export default function Tasks() {
   }, [user]);
 
   const visibleTasks = useMemo(() => {
-    if (activeFilter === "All") return tasks;
-    return tasks.filter((task) => task.status === activeFilter);
+    const filtered = activeFilter === "All" 
+      ? tasks 
+      : tasks.filter((task) => task.status === activeFilter);
+
+    // Sort by deadline, nulls last
+    return filtered.sort((a, b) => {
+      if (a.deadline && b.deadline) return a.deadline - b.deadline;
+      if (a.deadline) return -1; // a has deadline, b doesn't
+      if (b.deadline) return 1;  // b has deadline, a doesn't
+      return 0; // both are null
+    });
   }, [activeFilter, tasks]);
 
   const handleCreateTask = async () => {
@@ -77,6 +90,7 @@ export default function Tasks() {
       title: form.title.trim(),
       status: form.status.toLowerCase(),
       subject_id: form.subject_id || null,
+      deadline: form.deadline,
     };
 
     const { data, error } = await supabase
@@ -100,9 +114,10 @@ export default function Tasks() {
         title: form.title.trim(),
         status: form.status,
         subject: selectedSubject?.name || "No subject",
+        deadline: form.deadline,
       },
     ]);
-    setForm({ title: "", status: "Ongoing", subject_id: "" });
+    setForm({ title: "", status: "Ongoing", subject_id: "", deadline: null });
     setMessage("");
     setIsDialogOpen(false);
   };
@@ -114,6 +129,7 @@ export default function Tasks() {
       title: form.title.trim(),
       status: form.status.toLowerCase(),
       subject_id: form.subject_id || null,
+      deadline: form.deadline,
     };
 
     const { data, error } = await supabase
@@ -137,6 +153,7 @@ export default function Tasks() {
               title: data.title,
               status: data.status.charAt(0).toUpperCase() + data.status.slice(1),
               subject: data.subjects?.name || "No subject",
+              deadline: data.deadline ? parseISO(data.deadline) : null,
             }
           : task
       )
@@ -164,13 +181,14 @@ export default function Tasks() {
       title: task.title,
       status: task.status,
       subject_id: subjects.find((s) => s.name === task.subject)?.id || "",
+      deadline: task.deadline,
     });
     setIsDialogOpen(true);
   };
 
   const openNewDialog = () => {
     setEditingTask(null);
-    setForm({ title: "", status: "Ongoing", subject_id: "" });
+    setForm({ title: "", status: "Ongoing", subject_id: "", deadline: null });
     setIsDialogOpen(true);
   };
 
@@ -178,7 +196,7 @@ export default function Tasks() {
     setIsDialogOpen(false);
     setEditingTask(null);
     setMessage("");
-    setForm({ title: "", status: "Ongoing", subject_id: "" });
+    setForm({ title: "", status: "Ongoing", subject_id: "", deadline: null });
   };
 
   const handleSave = () => {
@@ -238,6 +256,12 @@ export default function Tasks() {
                   <p className="mt-1 text-sm uppercase tracking-[0.12em] text-[#7a8a77]">
                     {task.status} • {task.subject}
                   </p>
+                  {task.deadline && (
+                    <p className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                      <Calendar size={14} />
+                      Due {format(task.deadline, "MMM d, yyyy")}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                   <Button variant="ghost" size="icon" onClick={() => openEditDialog(task)}>
@@ -300,6 +324,18 @@ export default function Tasks() {
                 </option>
               ))}
             </SelectField>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xl font-medium text-[#354737]">
+              Deadline (Optional)
+            </label>
+            <DatePicker
+              value={form.deadline}
+              onChange={(date) =>
+                setForm((current) => ({ ...current, deadline: date }))
+              }
+            />
           </div>
 
           {message ? <p className="text-sm text-red-600">{message}</p> : null}
