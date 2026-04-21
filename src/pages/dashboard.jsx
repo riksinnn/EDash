@@ -76,10 +76,15 @@ export default function Dashboard() {
       } else {
         const tasks = tasksData || [];
         setTasks(tasks);
+        
+        // Prioritize showing an urgent task first, then an ongoing one.
+        const firstUrgentTask = tasks.find(
+          (task) => task.status && task.status.toLowerCase() === "urgent"
+        );
         const firstOngoingTask = tasks.find(
           (task) => task.status && task.status.toLowerCase() === "ongoing"
         );
-        setPriorityTask(firstOngoingTask || null);
+        setPriorityTask(firstUrgentTask || firstOngoingTask || null);
       }
     };
 
@@ -113,12 +118,12 @@ export default function Dashboard() {
     }
     setUpNext(nextClass || null);
 
+    const urgentTasksCount = tasks.filter(
+      (t) => t.status && t.status.toLowerCase() === "urgent"
+    ).length; 
     const ongoingTasksCount = tasks.filter(
       (t) => t.status && t.status.toLowerCase() === "ongoing"
-    ).length;
-    
-    // NOTE: "Urgent" status is not yet implemented.
-    const urgentTasksCount = 0; 
+    ).length; 
 
     setDashboardStats([
       { value: schedule.length, label: "Classes Today", color: "text-[var(--accent-strong)]" },
