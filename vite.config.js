@@ -12,4 +12,9 @@ export default defineConfig({
       external: ["react-day-picker"],
     },
   },
+  build: {
+    rollupOptions: {
+      external: ["react-day-picker"],
+    },
+  },
 })
