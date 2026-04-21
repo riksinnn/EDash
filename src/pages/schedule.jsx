@@ -346,8 +346,7 @@ setMessage("We couldn't update that class yet.");
                   key={entry.id}
                   className="group flex items-center justify-between rounded-3xl border p-5 transition-all"
                   style={{
-                    backgroundColor: `${entry.color}20`, // Add alpha for transparency
-                    borderColor: `${entry.color}80`,
+                    borderLeft: `5px solid ${entry.color || "transparent"}`,
                   }}
                 >
                   <div>

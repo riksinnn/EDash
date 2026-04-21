@@ -5,13 +5,14 @@ function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-export function Card({ className = "", children }) {
+export function Card({ className = "", children, style }) {
   return (
     <section
       className={cn(
         "rounded-[28px] border border-[var(--app-border)] bg-[var(--app-panel)] shadow-[var(--shadow-soft)]",
         className
       )}
+      style={style}
     >
       {children}
     </section>

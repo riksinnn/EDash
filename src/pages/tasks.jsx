@@ -8,7 +8,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { Checkbox } from "../components/ui/checkbox";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isAfter, isToday, differenceInDays, isPast } from "date-fns";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { AlertDialog } from "../components/ui/alert-dialog";
@@ -83,6 +83,46 @@ export default function Tasks() {
 
     loadInitialData();
   }, [user]);
+
+  useEffect(() => {
+    const updateTaskStatuses = async () => {
+      const today = new Date();
+      const updates = [];
+      const updatedTasks = tasks.map(task => {
+        if (task.status === "Done" || !task.deadline) {
+          return task;
+        }
+
+        const deadline = task.deadline;
+        const diffDays = differenceInDays(deadline, today);
+        let newStatus = task.status;
+
+        if (isPast(deadline) && !isToday(deadline)) {
+          newStatus = "Urgent";
+        } else if (isToday(deadline) || (isAfter(deadline, today) && diffDays <= 2)) {
+          newStatus = "Urgent";
+        } else if (isAfter(deadline, today) && diffDays > 2) {
+          newStatus = "Ongoing";
+        }
+
+        if (newStatus !== task.status) {
+          updates.push(supabase.from("tasks").update({ status: newStatus.toLowerCase() }).eq("id", task.id));
+          return { ...task, status: newStatus };
+        }
+
+        return task;
+      });
+
+      if (updates.length > 0) {
+        await Promise.all(updates);
+        setTasks(updatedTasks);
+      }
+    };
+
+    if (tasks.length > 0) {
+      updateTaskStatuses();
+    }
+  }, [tasks, user]);
 
   const visibleTasks = useMemo(() => {
     const filtered =
@@ -298,22 +338,54 @@ export default function Tasks() {
             {visibleTasks.map((task) => (
               <div
                 key={task.id}
-                className="group flex items-center justify-between rounded-2xl border border-[#ddd4c3] bg-[#fbf9f4] px-4 py-3 transition-colors hover:border-gray-300"
-                style={{ borderLeft: `5px solid ${task.color || "transparent"}` }}
+                className={cn(
+                  "group flex items-center justify-between rounded-2xl border px-4 py-3 transition-colors",
+                  task.status === "Done" && "opacity-60"
+                )}
+                style={{
+                  borderLeft: `5px solid ${task.color || "transparent"}`,
+                  backgroundColor:
+                    task.status === "Urgent"
+                      ? "#fee2e2" // light red
+                      : task.status === "Ongoing"
+                      ? "#f5cda2" // light orange
+                      : task.status === "Done"
+                      ? "#dcfce7" // light green
+                      : "#fbf9f4", // default
+                }}
               >
-                <div>
-                  <p className="text-xl font-semibold text-[#354737]">{task.title}</p>
-                  <p className="mt-1 text-sm uppercase tracking-[0.12em] text-[#7a8a77]">
-                    {task.status} • {task.subject}
-                  </p>
-                  {task.deadline && (
-                    <p className="mt-2 flex items-center gap-2 text-sm text-gray-500">
-                      <Calendar size={14} />
-                      Due {format(task.deadline, "MMM d, yyyy")}
+                <div className="flex items-center gap-4">
+                  <Checkbox
+                    checked={task.status === "Done"}
+                    onCheckedChange={() => handleToggleTaskStatus(task)}
+                    aria-label="Mark task as done"
+                  />
+                  <div>
+                    <p
+                      className={cn(
+                        "text-xl font-semibold text-[#354737]",
+                        task.status === "Done" && "line-through"
+                      )}
+                    >
+                      {task.title}
                     </p>
-                  )}
+                    <p className="mt-1 text-sm uppercase tracking-[0.12em] text-[#7a8a77]">
+                      {task.subject}
+                    </p>
+                    {task.deadline && (
+                      <p className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                        <Calendar size={14} />
+                        Due {format(task.deadline, "MMM d, yyyy")}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <div
+                  className={cn(
+                    "flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100",
+                    task.status === "Done" && "hidden"
+                  )}
+                >
                   <Button variant="ghost" size="icon" onClick={() => openEditDialog(task)}>
                     <Edit size={18} className="text-gray-600" />
                   </Button>
