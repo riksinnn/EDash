@@ -1,11 +1,17 @@
 import { ChevronRight, Moon, Bell, Shield, Info, BookOpenCheck, LogOut } from "lucide-react";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 import { Avatar } from "../components/ui/avatar";
 import { Badge } from "../components/ui/badge";
 import { Card } from "../components/ui/card";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+
+function cn(...inputs) {
+  return twMerge(clsx(inputs));
+}
 
 export default function Settings() {
   const { user } = useAuth();
@@ -57,18 +63,18 @@ export default function Settings() {
             <button
               type="button"
               onClick={toggleTheme}
-              className={[
+              className={cn(
                 "relative h-8 w-14 rounded-full transition-colors",
-                isDarkMode ? "bg-[var(--accent-strong)]" : "bg-[var(--app-border)]",
-              ].join(" ")}
+                isDarkMode ? "bg-[var(--accent-strong)]" : "bg-[var(--app-border)]"
+              )}
               aria-label={`Switch to ${isDarkMode ? "light" : "dark"} mode`}
               aria-pressed={isDarkMode}
             >
               <span
-                className={[
+                className={cn(
                   "absolute top-1 h-6 w-6 rounded-full bg-[var(--app-panel)] transition-transform",
-                  isDarkMode ? "translate-x-7" : "translate-x-1",
-                ].join(" ")}
+                  isDarkMode ? "translate-x-7" : "translate-x-1"
+                )}
               />
             </button>
           }

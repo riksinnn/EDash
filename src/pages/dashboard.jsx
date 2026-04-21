@@ -2,9 +2,15 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Circle, ClipboardCheck, Clock3, ListChecks } from "lucide-react";
 import { format } from "date-fns";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 import { Card } from "../components/ui/card";
+
+function cn(...inputs) {
+  return twMerge(clsx(inputs));
+}
 
 const formatTime = (timeString) => {
   if (!timeString) return "";
@@ -20,7 +26,7 @@ const formatTime = (timeString) => {
 function StatCard({ value, label, color }) {
   return (
     <Card className="p-6 text-center">
-      <p className={["text-5xl font-semibold", color].join(" ")}>{value}</p>
+      <p className={cn("text-5xl font-semibold", color)}>{value}</p>
       <p className="mt-3 text-xl uppercase tracking-[0.12em] text-[var(--text-secondary)]">
         {label}
       </p>
