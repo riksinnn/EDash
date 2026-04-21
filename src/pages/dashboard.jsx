@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Circle, ClipboardCheck, Clock3, ListChecks } from "lucide-react";
-import { format } from "date-fns";
+import { ChevronRight, Circle, Clock3, ListChecks, BookMarked } from "lucide-react";
+import { format, differenceInMilliseconds } from "date-fns";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useAuth } from "../context/AuthContext";
@@ -41,12 +41,13 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState([]);
   const [happeningNow, setHappeningNow] = useState(null);
   const [upNext, setUpNext] = useState(null);
+  const [countdown, setCountdown] = useState("");
   const [dashboardStats, setDashboardStats] = useState([
     { value: "0", label: "Classes Today", color: "text-[var(--accent-strong)]" },
     { value: "0", label: "Urgent Tasks", color: "text-[#cf4c4a]" },
     { value: "0", label: "Ongoing Tasks", color: "text-[var(--text-primary)]" },
   ]);
-  const [priorityTask, setPriorityTask] = useState(null);
+  const [priorityTasks, setPriorityTasks] = useState([]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setCurrentTime(new Date()), 1000);
@@ -61,7 +62,7 @@ export default function Dashboard() {
 
       const { data: scheduleData, error: scheduleError } = await supabase
         .from("schedule")
-        .select("*, subjects(name)")
+        .select("*, subjects(name, color)")
         .eq("user_id", user.id)
         .eq("day_of_week", today);
 
@@ -73,29 +74,52 @@ export default function Dashboard() {
 
       const { data: tasksData, error: tasksError } = await supabase
         .from("tasks")
-        .select("*, subjects(name)")
+        .select("*, subjects(name, color)")
         .eq("user_id", user.id)
         .not("status", "eq", "completed");
 
       if (tasksError) {
         console.error("Error fetching tasks:", tasksError);
       } else {
-        const tasks = tasksData || [];
-        setTasks(tasks);
-        
-        // Prioritize showing an urgent task first, then an ongoing one.
-        const firstUrgentTask = tasks.find(
-          (task) => task.status && task.status.toLowerCase() === "urgent"
-        );
-        const firstOngoingTask = tasks.find(
-          (task) => task.status && task.status.toLowerCase() === "ongoing"
-        );
-        setPriorityTask(firstUrgentTask || firstOngoingTask || null);
+        setTasks(tasksData || []);
       }
     };
 
     fetchData();
   }, [user]);
+
+  useEffect(() => {
+    const sortedTasks = [...tasks].sort((a, b) => {
+      const statusOrder = { urgent: 0, ongoing: 1 };
+      const aStatus = a.status?.toLowerCase();
+      const bStatus = b.status?.toLowerCase();
+
+      // Prioritize tasks for the "Happening Now" subject
+      if (happeningNow) {
+        const currentSubjectId = happeningNow.subjects.id;
+        const aIsCurrent = a.subjects?.id === currentSubjectId;
+        const bIsCurrent = b.subjects?.id === currentSubjectId;
+        if (aIsCurrent && !bIsCurrent) return -1;
+        if (!aIsCurrent && bIsCurrent) return 1;
+      }
+
+      // Then, sort by status
+      if (statusOrder[aStatus] !== statusOrder[bStatus]) {
+        return (statusOrder[aStatus] ?? 2) - (statusOrder[bStatus] ?? 2);
+      }
+
+      // Finally, sort by deadline (earliest first)
+      const aDeadline = a.deadline ? new Date(a.deadline) : null;
+      const bDeadline = b.deadline ? new Date(b.deadline) : null;
+      if (aDeadline && bDeadline) return aDeadline - bDeadline;
+      if (aDeadline) return -1;
+      if (bDeadline) return 1;
+
+      return 0;
+    });
+
+    setPriorityTasks(sortedTasks);
+  }, [tasks, happeningNow]);
 
   useEffect(() => {
     const timeToDate = (timeString) => {
@@ -111,31 +135,73 @@ export default function Dashboard() {
     );
 
     const now = currentTime;
-    const currentClass = sortedSchedule.find((c) => {
+    const nextClass = sortedSchedule.find((c) => {
       const startTime = timeToDate(c.start_time);
-      const endTime = timeToDate(c.end_time);
-      return now >= startTime && now <= endTime;
+      return startTime > now;
     });
-    setHappeningNow(currentClass || null);
-
-    let nextClass = null;
-    if (!currentClass) {
-      nextClass = sortedSchedule.find((c) => timeToDate(c.start_time) > now);
-    }
     setUpNext(nextClass || null);
+
+    if (currentClass) {
+      setHappeningNow(currentClass);
+    } else {
+      setHappeningNow(null);
+    }
+
+    // Countdown logic
+    let countdownInterval;
+    if (nextClass) {
+      countdownInterval = setInterval(() => {
+        const now = new Date();
+        const nextClassTime = timeToDate(nextClass.start_time);
+        const diff = differenceInMilliseconds(nextClassTime, now);
+
+        if (diff <= 0) {
+          setCountdown("Starting now");
+          clearInterval(countdownInterval);
+          return;
+        }
+
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        setCountdown(
+          `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+            2,
+            "0"
+          )}:${String(seconds).padStart(2, "0")}`
+        );
+      }, 1000);
+    } else {
+      setCountdown("");
+    }
 
     const urgentTasksCount = tasks.filter(
       (t) => t.status && t.status.toLowerCase() === "urgent"
-    ).length; 
+    ).length;
     const ongoingTasksCount = tasks.filter(
       (t) => t.status && t.status.toLowerCase() === "ongoing"
-    ).length; 
+    ).length;
 
     setDashboardStats([
-      { value: schedule.length, label: "Classes Today", color: "text-[var(--accent-strong)]" },
+      {
+        value: schedule.length,
+        label: "Classes Today",
+        color: "text-[var(--accent-strong)]",
+      },
       { value: urgentTasksCount, label: "Urgent Tasks", color: "text-[#cf4c4a]" },
-      { value: ongoingTasksCount, label: "Ongoing Tasks", color: "text-[var(--text-primary)]" },
+      {
+        value: ongoingTasksCount,
+        label: "Ongoing Tasks",
+        color: "text-[var(--text-primary)]",
+      },
     ]);
+
+    return () => {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+      }
+    };
   }, [currentTime, schedule, tasks]);
 
   return (
@@ -159,9 +225,14 @@ export default function Dashboard() {
       </section>
 
       <section className="grid gap-5 md:grid-cols-2">
-        <Card className="bg-[radial-gradient(circle_at_top,_rgba(182,191,160,0.16),_transparent_62%),linear-gradient(180deg,_var(--app-panel-soft)_0%,_var(--app-panel)_100%)] p-7">
+        <Card
+          className="bg-[radial-gradient(circle_at_top,_rgba(182,191,160,0.16),_transparent_62%),linear-gradient(180deg,_var(--app-panel-soft)_0%,_var(--app-panel)_100%)] p-7"
+          style={{
+            "--subject-color": happeningNow?.subjects?.color || "transparent",
+          }}
+        >
           <div className="flex items-center gap-3 text-xl font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
-            <Circle size={10} fill="currentColor" />
+            <Circle size={10} fill="var(--subject-color)" color="var(--subject-color)" />
             <span>Happening Now</span>
           </div>
           <div className="flex min-h-[170px] flex-col items-center justify-center text-center">
@@ -200,6 +271,9 @@ export default function Dashboard() {
                 <p className="mt-3 text-2xl text-[var(--text-secondary)]">
                   {formatTime(upNext.start_time)} - {formatTime(upNext.end_time)}
                 </p>
+                <p className="mt-4 text-3xl font-semibold text-[var(--accent-strong)]">
+                  {countdown}
+                </p>
               </>
             ) : (
               <p className="text-3xl text-[var(--text-secondary)]">
@@ -216,6 +290,16 @@ export default function Dashboard() {
         ))}
       </section>
 
+      <section>
+        <Link
+          to="/subjects"
+          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gray-100 p-4 text-center text-lg font-medium text-gray-700 transition-colors hover:bg-gray-200"
+        >
+          <BookMarked size={20} />
+          <span>Manage Subjects</span>
+        </Link>
+      </section>
+
       <section className="space-y-4 pt-3">
         <div className="flex items-center justify-between gap-4">
           <h3 className="font-serif text-4xl font-semibold text-[var(--text-primary)]">
@@ -230,21 +314,38 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        {priorityTask ? (
-          <Card className="p-5">
-            <p className="text-xl font-semibold text-[#354737]">{priorityTask.title}</p>
-            <p className="mt-1 text-sm font-medium uppercase tracking-wider text-[#6e7c69]">
-              {priorityTask.status} &bull; {priorityTask.subjects?.name || "No Subject"}
-            </p>
-          </Card>
-        ) : (
-          <Card className="flex min-h-[190px] flex-col items-center justify-center border-dashed border-[var(--app-border)] p-6 text-center shadow-none">
-            <ListChecks size={46} className="text-[var(--text-muted)]" />
-            <p className="mt-4 text-2xl text-[var(--text-secondary)]">
-              All caught up for today!
-            </p>
-          </Card>
-        )}
+        <div className="space-y-3">
+          {priorityTasks.length > 0 ? (
+            <div
+              className={cn(
+                "space-y-3",
+                priorityTasks.length > 3 && "max-h-[280px] overflow-y-auto pr-2"
+              )}
+            >
+              {priorityTasks.slice(0, 3).map((task) => (
+                <Card
+                  key={task.id}
+                  className="p-5"
+                  style={{
+                    borderLeft: `5px solid ${task.subjects?.color || "transparent"}`,
+                  }}
+                >
+                  <p className="text-xl font-semibold text-[#354737]">{task.title}</p>
+                  <p className="mt-1 text-sm font-medium uppercase tracking-wider text-[#6e7c69]">
+                    {task.status} &bull; {task.subjects?.name || "No Subject"}
+                  </p>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="flex min-h-[190px] flex-col items-center justify-center border-dashed border-[var(--app-border)] p-6 text-center shadow-none">
+              <ListChecks size={46} className="text-[var(--text-muted)]" />
+              <p className="mt-4 text-2xl text-[var(--text-secondary)]">
+                All caught up for today!
+              </p>
+            </Card>
+          )}
+        </div>
       </section>
     </div>
   );

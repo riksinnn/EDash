@@ -54,7 +54,7 @@ export default function Schedule() {
       // Fetch schedule entries with subject names
       const { data: scheduleData, error: scheduleError } = await supabase
         .from("schedule")
-        .select("id, day_of_week, start_time, end_time, subjects ( name )")
+        .select("id, day_of_week, start_time, end_time, subjects ( name, color )")
         .eq("user_id", user.id);
 
       if (scheduleError) {
@@ -66,6 +66,7 @@ export default function Schedule() {
           subject: entry.subjects?.name || "Unnamed Class",
           startTime: entry.start_time,
           endTime: entry.end_time,
+          color: entry.subjects?.color,
         }));
         setEntries(formattedEntries);
       }
@@ -73,7 +74,7 @@ export default function Schedule() {
       // Fetch subjects for the dropdown
       const { data: subjectsData, error: subjectsError } = await supabase
         .from("subjects")
-        .select("id, name")
+        .select("id, name, color")
         .eq("user_id", user.id)
         .order("name");
 
@@ -141,7 +142,7 @@ export default function Schedule() {
       return;
     }
 
-    const conflictingEntry = entries.find((entry) => {
+    const conflictingEntries = entries.filter((entry) => {
       if (entry.id === selectedEntry.id) return false; // Exclude the entry being edited
       if (entry.day !== form.day) return false;
 
@@ -150,8 +151,9 @@ export default function Schedule() {
       return newStartTime < existingEndTime && newEndTime > existingStartTime;
     });
 
-    if (conflictingEntry) {
-      setMessage(`This time conflicts with "${conflictingEntry.subject}".`);
+    if (conflictingEntries.length > 0) {
+      const conflictingSubjects = conflictingEntries.map((e) => e.subject).join(", ");
+      setMessage(`This time conflicts with: ${conflictingSubjects}.`);
       return;
     }
     // --- End Validation ---
@@ -167,7 +169,7 @@ export default function Schedule() {
       .from("schedule")
       .update(schedulePayload)
       .eq("id", selectedEntry.id)
-      .select("*, subjects(name)")
+      .select("*, subjects(name, color)")
       .single();
 
     if (error) {
@@ -185,6 +187,7 @@ setMessage("We couldn't update that class yet.");
               subject: data.subjects?.name || "Unnamed Class",
               startTime: data.start_time,
               endTime: data.end_time,
+              color: data.subjects?.color,
             }
           : entry
       )
@@ -235,7 +238,7 @@ setMessage("We couldn't update that class yet.");
       return;
     }
 
-    const conflictingEntry = entries.find((entry) => {
+    const conflictingEntries = entries.filter((entry) => {
       if (entry.day !== form.day) {
         return false;
       }
@@ -246,8 +249,9 @@ setMessage("We couldn't update that class yet.");
       return newStartTime < existingEndTime && newEndTime > existingStartTime;
     });
 
-    if (conflictingEntry) {
-      setMessage(`This time conflicts with "${conflictingEntry.subject}".`);
+    if (conflictingEntries.length > 0) {
+      const conflictingSubjects = conflictingEntries.map((e) => e.subject).join(", ");
+      setMessage(`This time conflicts with: ${conflictingSubjects}.`);
       return;
     }
     // --- End Validation ---
@@ -282,6 +286,7 @@ setMessage("We couldn't update that class yet.");
         subject: selectedSubject?.name || "Unnamed Class",
         startTime: form.start_time,
         endTime: form.end_time,
+        color: selectedSubject?.color,
       },
     ]);
     setSelectedDay(form.day);
@@ -340,6 +345,7 @@ setMessage("We couldn't update that class yet.");
                 <Card
                   key={entry.id}
                   className="group flex items-center justify-between rounded-3xl border border-[#ddd4c3] bg-[#fbf9f4] p-5 transition-all hover:border-[#c2b8a8]"
+                  style={{ borderLeft: `5px solid ${entry.color || "transparent"}` }}
                 >
                   <div>
                     <p className="text-2xl font-semibold text-[#354737]">{entry.subject}</p>

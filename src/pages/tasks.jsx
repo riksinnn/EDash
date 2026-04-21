@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ListChecks, Plus, Edit, Trash2, Calendar } from "lucide-react";
+import {
+  ChevronDown,
+  ListChecks,
+  Plus,
+  Edit,
+  Trash2,
+  Calendar,
+} from "lucide-react";
+import { Checkbox } from "../components/ui/checkbox";
 import { format, parseISO } from "date-fns";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -40,7 +48,7 @@ export default function Tasks() {
       // Fetch tasks with subject names
       const { data: tasksData, error: tasksError } = await supabase
         .from("tasks")
-        .select("id, title, status, deadline, subjects ( name )")
+        .select("id, title, status, deadline, subjects ( name, color )")
         .eq("user_id", user.id);
 
       if (tasksError) {
@@ -54,6 +62,7 @@ export default function Tasks() {
             : "Ongoing",
           subject: task.subjects?.name || "No subject",
           deadline: task.deadline ? parseISO(task.deadline) : null,
+          color: task.subjects?.color,
         }));
         setTasks(formattedTasks);
       }
@@ -61,7 +70,7 @@ export default function Tasks() {
       // Fetch subjects for the dropdown
       const { data: subjectsData, error: subjectsError } = await supabase
         .from("subjects")
-        .select("id, name")
+        .select("id, name, color")
         .eq("user_id", user.id)
         .order("name");
 
@@ -76,18 +85,49 @@ export default function Tasks() {
   }, [user]);
 
   const visibleTasks = useMemo(() => {
-    const filtered = activeFilter === "All" 
-      ? tasks 
-      : tasks.filter((task) => task.status === activeFilter);
+    const filtered =
+      activeFilter === "All"
+        ? tasks
+        : tasks.filter((task) => task.status === activeFilter);
 
-    // Sort by deadline, nulls last
+    // Sort by status ("Done" tasks last), then by deadline
     return filtered.sort((a, b) => {
+      if (a.status === "Done" && b.status !== "Done") return 1;
+      if (a.status !== "Done" && b.status === "Done") return -1;
       if (a.deadline && b.deadline) return a.deadline - b.deadline;
-      if (a.deadline) return -1; // a has deadline, b doesn't
-      if (b.deadline) return 1;  // b has deadline, a doesn't
-      return 0; // both are null
+      if (a.deadline) return -1;
+      if (b.deadline) return 1;
+      return 0;
     });
   }, [activeFilter, tasks]);
+
+  const handleToggleTaskStatus = async (task) => {
+    const newStatus = task.status === "Done" ? "Ongoing" : "Done";
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .update({ status: newStatus.toLowerCase() })
+      .eq("id", task.id)
+      .select("*, subjects(name, color)")
+      .single();
+
+    if (error) {
+      console.error("Error updating task status:", error);
+      // Optionally show a message to the user
+      return;
+    }
+
+    setTasks((current) =>
+      current.map((t) =>
+        t.id === task.id
+          ? {
+              ...t,
+              status: newStatus,
+            }
+          : t
+      )
+    );
+  };
 
   const handleCreateTask = async () => {
     if (!form.title.trim() || !user) return;
@@ -122,6 +162,7 @@ export default function Tasks() {
         status: form.status,
         subject: selectedSubject?.name || "No subject",
         deadline: form.deadline,
+        color: selectedSubject?.color,
       },
     ]);
     setForm({ title: "", status: "Ongoing", subject_id: "", deadline: null });
@@ -143,7 +184,7 @@ export default function Tasks() {
       .from("tasks")
       .update(taskPayload)
       .eq("id", editingTask.id)
-      .select("*, subjects(name)")
+      .select("*, subjects(name, color)")
       .single();
 
     if (error) {
@@ -161,6 +202,7 @@ export default function Tasks() {
               status: data.status.charAt(0).toUpperCase() + data.status.slice(1),
               subject: data.subjects?.name || "No subject",
               deadline: data.deadline ? parseISO(data.deadline) : null,
+              color: data.subjects?.color,
             }
           : task
       )
@@ -257,6 +299,7 @@ export default function Tasks() {
               <div
                 key={task.id}
                 className="group flex items-center justify-between rounded-2xl border border-[#ddd4c3] bg-[#fbf9f4] px-4 py-3 transition-colors hover:border-gray-300"
+                style={{ borderLeft: `5px solid ${task.color || "transparent"}` }}
               >
                 <div>
                   <p className="text-xl font-semibold text-[#354737]">{task.title}</p>
@@ -303,20 +346,7 @@ export default function Tasks() {
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <SelectField
-              label="Status"
-              value={form.status}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, status: value }))
-              }
-            >
-              {["Ongoing", "Urgent", "Done"].map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </SelectField>
+          <div className="grid gap-4">
             <SelectField
               label="Subject (Optional)"
               value={form.subject_id}
