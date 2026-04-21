@@ -344,8 +344,11 @@ setMessage("We couldn't update that class yet.");
               {dayEntries.map((entry) => (
                 <Card
                   key={entry.id}
-                  className="group flex items-center justify-between rounded-3xl border border-[#ddd4c3] bg-[#fbf9f4] p-5 transition-all hover:border-[#c2b8a8]"
-                  style={{ borderLeft: `5px solid ${entry.color || "transparent"}` }}
+                  className="group flex items-center justify-between rounded-3xl border p-5 transition-all"
+                  style={{
+                    backgroundColor: `${entry.color}20`, // Add alpha for transparency
+                    borderColor: `${entry.color}80`,
+                  }}
                 >
                   <div>
                     <p className="text-2xl font-semibold text-[#354737]">{entry.subject}</p>
