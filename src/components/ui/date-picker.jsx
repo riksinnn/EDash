@@ -2,10 +2,15 @@ import { useState } from "react";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { DayPicker } from "react-day-picker";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
-import { cn } from "../../lib/utils.jsx";
 import { Button } from "./button";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+
+function cn(...inputs) {
+  return twMerge(clsx(inputs));
+}
 
 export function DatePicker({ value, onChange, ...props }) {
   return (
