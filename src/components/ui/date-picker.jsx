@@ -6,7 +6,7 @@ import "react-day-picker/dist/style.css";
 
 import { Button } from "./button";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
-import { cn } from "../../lib/utils";
+import { cn } from "@/lib/utils";
 
 export function DatePicker({ value, onChange, ...props }) {
   return (
