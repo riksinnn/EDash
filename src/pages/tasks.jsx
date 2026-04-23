@@ -440,7 +440,7 @@ export default function Tasks() {
 
           <div className="grid gap-4">
             <SelectField
-              label="Subject (Optional)"
+              label="Subject"
               value={form.subject_id}
               onChange={(value) =>
                 setForm((current) => ({ ...current, subject_id: value }))
