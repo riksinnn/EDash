@@ -169,8 +169,28 @@ export default function Tasks() {
     );
   };
 
+  const handleCreateTaskWithNewSubject = async (taskTitle, subjectName, subjectColor) => {
+    console.log("Attempting transactional insert...");
+
+    const { data, error } = await supabase.rpc('create_task_with_new_subject', {
+      task_title: taskTitle,
+      new_subject_name: subjectName,
+      new_subject_color: subjectColor
+    });
+
+    if (error) {
+      console.error('Transaction failed:', error.message);
+      // You can add logic here to show an error message to the user
+    } else {
+      console.log('Transaction successful! New task created with ID:', data);
+      // To see the new data, you should refresh the task list from the database
+      loadInitialData(); // Assuming loadInitialData is the function that fetches tasks
+    }
+  };
+
   const handleCreateTask = async () => {
     if (!form.title.trim() || !user) return;
+
 
     const taskPayload = {
       user_id: user.id,
