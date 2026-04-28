@@ -76,7 +76,7 @@ export default function Dashboard() {
         .from("tasks")
         .select("*, subjects(name, color)")
         .eq("user_id", user.id)
-        .not("status", "eq", "completed");
+        .not("status", "eq", "done");
 
       if (tasksError) {
         console.error("Error fetching tasks:", tasksError);
@@ -325,7 +325,16 @@ export default function Dashboard() {
                 priorityTasks.length > 3 && "max-h-[280px] overflow-y-auto pr-2"
               )}
             >
-              {priorityTasks.slice(0, 3).map((task) => (
+            {priorityTasks.slice(0, 3).map((task) => {
+              const statusColors = {
+                urgent: 'text-red-600',
+                ongoing: 'text-orange-500',
+                done: 'text-green-600',
+              };
+
+              const status = task.status?.toLowerCase();
+
+              return (
                 <Card
                   key={task.id}
                   className="p-5"
@@ -334,16 +343,15 @@ export default function Dashboard() {
                   }}
                 >
                   <p className="text-xl font-semibold text-[#354737]">{task.title}</p>
+
                   <p className={`mt-1 text-sm font-medium uppercase tracking-wider ${
-                    task.status === 'Urgent' ? 'text-red-600' : 
-                    task.status === 'Ongoing' ? 'text-orange-500' : 
-                    task.status === 'Done' ? 'text-green-600' : 
-                    'text-[#6e7c69]' // Default color if no match
+                    statusColors[status] || 'text-[#6e7c69]'
                   }`}>
                     {task.status} &bull; {task.subjects?.name || "No Subject"}
                   </p>
                 </Card>
-              ))}
+              );
+            })}
             </div>
           ) : (
             <Card className="flex min-h-[190px] flex-col items-center justify-center border-dashed border-[var(--app-border)] p-6 text-center shadow-none">
