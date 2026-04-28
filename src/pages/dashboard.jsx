@@ -334,7 +334,12 @@ export default function Dashboard() {
                   }}
                 >
                   <p className="text-xl font-semibold text-[#354737]">{task.title}</p>
-                  <p className="mt-1 text-sm font-medium uppercase tracking-wider text-[#6e7c69]">
+                  <p className={`mt-1 text-sm font-medium uppercase tracking-wider ${
+                    task.status === 'Urgent' ? 'text-red-600' : 
+                    task.status === 'Ongoing' ? 'text-orange-500' : 
+                    task.status === 'Done' ? 'text-green-600' : 
+                    'text-[#6e7c69]' // Default color if no match
+                  }`}>
                     {task.status} &bull; {task.subjects?.name || "No Subject"}
                   </p>
                 </Card>
