@@ -8,8 +8,7 @@ import { Card } from "../components/ui/card";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 import { SelectField } from "../components/ui/SelectField";
-import { TimeField } from "../components/ui/TimeField";
-
+import { TimeScrollPicker } from "../components/ui/TimeScrollPicker";
 
 function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -33,7 +32,7 @@ export default function Schedule() {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [form, setForm] = useState({
     subject_id: "",
-    day: days[new Date().getDay()],
+    days: [days[new Date().getDay()]], // Use 'days' array for multi-day support
     start_time: "",
     end_time: "",
   });
@@ -62,14 +61,15 @@ export default function Schedule() {
       if (scheduleError) {
         console.error("Error fetching schedule:", scheduleError);
       } else if (scheduleData) {
-        const formattedEntries = scheduleData.map((entry) => ({
-          id: entry.id,
-          day: days[entry.day_of_week],
-          subject: entry.subjects?.name || "Unnamed Class",
-          startTime: entry.start_time,
-          endTime: entry.end_time,
-          color: entry.subjects?.color,
-        }));
+      const formattedEntries = scheduleData.map((entry) => ({
+        id: entry.id,
+        subject_id: entry.subject_id, // ADD THIS
+        day: days[entry.day_of_week],
+        subject: entry.subjects?.name || "Unnamed Class",
+        startTime: entry.start_time?.slice(0, 5),
+        endTime: entry.end_time?.slice(0, 5),
+        color: entry.subjects?.color,
+      }));
         setEntries(formattedEntries);
       }
 
@@ -113,31 +113,37 @@ export default function Schedule() {
   );
 
   const openEditDialog = (entry) => {
-    setSelectedEntry(entry);
     setForm({
-      subject_id: subjects.find((s) => s.name === entry.subject)?.id || "",
+      subject_id: entry.subject_id,
       day: entry.day,
       start_time: entry.startTime,
       end_time: entry.endTime,
     });
-    setIsEditDialogOpen(true);
-    setMessage(""); // Clear previous messages
-  };
 
-  const openDeleteDialog = (entry) => {
     setSelectedEntry(entry);
-    setIsDeleteDialogOpen(true);
+    setMessage("");
+    setIsEditDialogOpen(true);
   };
 
-  const handleUpdateSchedule = async () => {
-    if (!form.subject_id || !user || !selectedEntry) return;
+    const openDeleteDialog = (entry) => {
+      setSelectedEntry(entry);
+      setIsDeleteDialogOpen(true);
+    };
 
-    // --- Time Overlap Validation ---
-    if (!form.start_time || !form.end_time) {
-      setMessage("Please select a start and end time.");
+    const handleUpdateSchedule = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+
+    if (!form.subject_id || !user || !selectedEntry) {
+      setIsSaving(false);
       return;
     }
 
+    if (!form.start_time || !form.end_time) {
+      setMessage("Please select a start and end time.");
+      setIsSaving(false);
+      return;
+    }
 
     const timeToDate = (time) => {
       const d = new Date();
@@ -151,70 +157,61 @@ export default function Schedule() {
 
     if (newStartTime >= newEndTime) {
       setMessage("End time must be after start time.");
+      setIsSaving(false);
       return;
     }
 
-    // --- Duplicate Subject Check (same day) ---
-    const duplicateEntry = entries.find((entry) => {
-      return (
-        entry.day === form.day &&
-        entry.subject === subjects.find(s => s.id === form.subject_id)?.name
-      );
-    });
-
-    if (duplicateEntry) {
-      setMessage("This subject is already scheduled on this day.");
-      return;
-    }
-
-    // --- Conflict Subject Check (same day) ---
     const conflictingEntries = entries.filter((entry) => {
-      if (entry.id === selectedEntry.id) return false; // Exclude the entry being edited
-      if (entry.day !== form.day) return false;
+      if (entry.id === selectedEntry.id) return false;
+      if (!form.days.includes(entry.day)) return false;
 
       const existingStartTime = timeToDate(entry.startTime);
       const existingEndTime = timeToDate(entry.endTime);
+
       return newStartTime < existingEndTime && newEndTime > existingStartTime;
     });
 
     if (conflictingEntries.length > 0) {
       const conflictingSubjects = conflictingEntries.map((e) => e.subject).join(", ");
       setMessage(`This time conflicts with: ${conflictingSubjects}.`);
+      setIsSaving(false);
       return;
     }
-    // --- End Validation ---
 
     const schedulePayload = {
       subject_id: form.subject_id,
-      day_of_week: dayMap[form.day],
-      start_time: form.start_time,
-      end_time: form.end_time,
+      day_of_week: dayMap[form.days],
+      start_time: `${form.start_time}:00`,
+      end_time: `${form.end_time}:00`,
     };
 
-    const { data, error } = await supabase
+    // 🔥 FAST UPDATE (removed .select())
+    const { error } = await supabase
       .from("schedule")
       .update(schedulePayload)
-      .eq("id", selectedEntry.id)
-      .select("*, subjects(name, color)")
-      .single();
+      .eq("id", selectedEntry.id);
 
     if (error) {
-      console.error("Error updating schedule:", error);
+      console.error(error);
       setMessage("We couldn't update that class yet.");
       setIsSaving(false);
       return;
     }
 
+    const selectedSubject = subjects.find(s => s.id === form.subject_id);
+
+    // 🔥 instant UI update (no waiting)
     setEntries((current) =>
       current.map((entry) =>
         entry.id === selectedEntry.id
           ? {
-              id: data.id,
-              day: days[data.day_of_week],
-              subject: data.subjects?.name || "Unnamed Class",
-              startTime: data.start_time,
-              endTime: data.end_time,
-              color: data.subjects?.color,
+              ...entry,
+              subject_id: form.subject_id,
+              subject: selectedSubject?.name || entry.subject,
+              day: form.days,
+              startTime: form.start_time,
+              endTime: form.end_time,
+              color: selectedSubject?.color,
             }
           : entry
       )
@@ -223,6 +220,7 @@ export default function Schedule() {
     setIsEditDialogOpen(false);
     setSelectedEntry(null);
     setMessage("");
+    setIsSaving(false); // 🔥 CRITICAL FIX
   };
 
   const handleDeleteSchedule = async () => {
@@ -242,15 +240,14 @@ export default function Schedule() {
   };
 
   const handleSchedule = async () => {
-  if (isSaving) return; // prevent double click
-  setIsSaving(true);
+    if (!form.subject_id || !user || form.days.length === 0) {
+      setIsSaving(false);
+      return;
+    }
 
-  if (!form.subject_id || !user) {
-    setIsSaving(false);
-    return;
-  }
+    setIsSaving(true);
+    setMessage("");
 
-    // --- Time Overlap Validation ---
     if (!form.start_time || !form.end_time) {
       setMessage("Please select a start and end time.");
       setIsSaving(false);
@@ -272,74 +269,61 @@ export default function Schedule() {
       setIsSaving(false);
       return;
     }
-    
-    // --- Duplicate Subject Check (same day) ---
-        const duplicateEntry = entries.find((entry) => {
-          return (
-            entry.day === form.day &&
-            entry.subject === subjects.find(s => s.id === form.subject_id)?.name
-          );
-        });
 
-        if (duplicateEntry) {
-          setMessage("This subject is already scheduled on this day.");
-          return;
-        }
-
+    // Updated to check for conflicts across multiple selected days
     const conflictingEntries = entries.filter((entry) => {
-      if (entry.day !== form.day) {
+      if (!form.days.includes(entry.day)) {
         return false;
       }
       const existingStartTime = timeToDate(entry.startTime);
       const existingEndTime = timeToDate(entry.endTime);
-
-      // Check for overlap: (StartA < EndB) and (EndA > StartB)
       return newStartTime < existingEndTime && newEndTime > existingStartTime;
     });
 
     if (conflictingEntries.length > 0) {
-      const conflictingSubjects = conflictingEntries.map((e) => e.subject).join(", ");
-      setMessage(`This time conflicts with: ${conflictingSubjects}.`);
+      const conflictingInfo = conflictingEntries
+        .map((e) => `${e.subject} on ${e.day}`)
+        .join(", ");
+      setMessage(`This time conflicts with: ${conflictingInfo}.`);
       setIsSaving(false);
       return;
     }
-    // --- End Validation ---
 
-    const schedulePayload = {
+    // Create multiple payloads for each selected day
+    const payloads = form.days.map((day) => ({
       user_id: user.id,
       subject_id: form.subject_id,
-      day_of_week: dayMap[form.day],
+      day_of_week: dayMap[day],
       start_time: form.start_time,
       end_time: form.end_time,
-    };
+    }));
 
-    const { data, error } = await supabase
-      .from("schedule")
-      .insert([schedulePayload])
-      .select()
-      .single();
+    const { data, error } = await supabase.from("schedule").insert(payloads).select();
 
     if (error) {
       console.error(error);
-      setMessage("We couldn't save that class yet.");
+      setMessage("We couldn't save the classes. Please try again.");
       setIsSaving(false);
       return;
     }
 
     const selectedSubject = subjects.find((s) => s.id === form.subject_id);
 
-    setEntries((current) => [
-      ...current,
-      {
-        id: data.id,
-        day: form.day,
-        subject: selectedSubject?.name || "Unnamed Class",
-        startTime: form.start_time,
-        endTime: form.end_time,
-        color: selectedSubject?.color,
-      },
-    ]);
-    setSelectedDay(form.day);
+    // Add new entries to the local state for each newly created schedule
+    const newEntries = data.map((item) => ({
+      id: item.id,
+      subject_id: item.subject_id,
+      day: days[item.day_of_week],
+      subject: selectedSubject?.name || "Unnamed Class",
+      startTime: item.start_time.slice(0, 5),
+      endTime: item.end_time.slice(0, 5),
+      color: selectedSubject?.color,
+    }));
+
+    setEntries((current) => [...current, ...newEntries]);
+    if (form.days.length > 0) {
+      setSelectedDay(form.days[0]); // Set the selected day to the first new day
+    }
     setMessage("");
     setIsDialogOpen(false);
     setIsSaving(false);
@@ -373,7 +357,17 @@ export default function Schedule() {
         <Button
           variant="icon"
           className="h-12 w-12"
-          onClick={() => setIsDialogOpen(true)}
+          onClick={() => {
+            // Reset form for creating a new schedule, using the currently selected day as the default
+            setForm({
+              subject_id: "",
+              days: [selectedDay],
+              start_time: "",
+              end_time: "",
+            });
+            setMessage(""); // Clear any previous error messages
+            setIsDialogOpen(true);
+          }}
           aria-label="Schedule class"
         >
           <Plus size={22} />
@@ -442,27 +436,49 @@ export default function Schedule() {
             ))}
           </SelectField>
 
-          <SelectField
-            label="Day"
-            value={form.day}
-            onChange={(value) => setForm((current) => ({ ...current, day: value }))}
-          >
-            {days.map((day) => (
-              <option key={day} value={day}>
-                {day}
-              </option>
-            ))}
-          </SelectField>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Days</label>
+            <div className="grid grid-cols-4 gap-2 rounded-lg bg-gray-100 p-2 sm:grid-cols-7">
+              {days.map((day) => {
+                const isSelected = form.days?.includes(day);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => {
+                      setForm((current) => {
+                        const newDays = isSelected
+                          ? current.days.filter((d) => d !== day)
+                          : [...current.days, day];
+                        return { ...current, days: newDays };
+                      });
+                    }}
+                    className={cn(
+                      "rounded-md px-3 py-2 text-center text-sm font-medium transition-colors",
+                      isSelected
+                        ? "bg-blue-500 text-white shadow-sm"
+                        : "bg-white text-gray-600 hover:bg-gray-50",
+                    )}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <TimeField
+            <TimeScrollPicker
+              key={`start-${form.start_time}-${form.days}`}
               label="Start Time"
               value={form.start_time}
               onChange={(value) =>
                 setForm((current) => ({ ...current, start_time: value }))
               }
             />
-            <TimeField
+
+            <TimeScrollPicker
+              key={`end-${form.end_time}-${form.days}`}
               label="End Time"
               value={form.end_time}
               onChange={(value) =>
@@ -508,7 +524,7 @@ export default function Schedule() {
 
           <SelectField
             label="Day"
-            value={form.day}
+            value={form.days}
             onChange={(value) => setForm((current) => ({ ...current, day: value }))}
           >
             {days.map((day) => (
@@ -519,14 +535,17 @@ export default function Schedule() {
           </SelectField>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <TimeField
+            <TimeScrollPicker
+              key={`start-${form.start_time}-${form.days}`}
               label="Start Time"
               value={form.start_time}
               onChange={(value) =>
                 setForm((current) => ({ ...current, start_time: value }))
               }
             />
-            <TimeField
+
+            <TimeScrollPicker
+              key={`end-${form.end_time}-${form.days}`}
               label="End Time"
               value={form.end_time}
               onChange={(value) =>
