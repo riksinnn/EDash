@@ -154,7 +154,9 @@ export default function Subjects() {
       setMessage("We couldn't delete that subject.");
       return;
     }
-
+    setSubjects((current) =>
+      current.filter((s) => s.id !== selectedSubject.id)
+    );
     setSelectedSubject(null);
     setIsDeleteDialogOpen(false);
   };
@@ -357,7 +359,10 @@ export default function Subjects() {
         <div className="space-y-4">
           <p className="text-lg text-[#6e7c69]">
             Are you sure you want to delete <strong>{selectedSubject?.name}</strong>?
-            This action cannot be undone.
+          </p>
+
+          <p className="text-sm text-red-600">
+            All tasks and schedules under this subject will also be permanently deleted.
           </p>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>

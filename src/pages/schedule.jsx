@@ -138,6 +138,7 @@ export default function Schedule() {
       return;
     }
 
+
     const timeToDate = (time) => {
       const d = new Date();
       const [h, m] = time.split(":");
@@ -153,6 +154,20 @@ export default function Schedule() {
       return;
     }
 
+    // --- Duplicate Subject Check (same day) ---
+    const duplicateEntry = entries.find((entry) => {
+      return (
+        entry.day === form.day &&
+        entry.subject === subjects.find(s => s.id === form.subject_id)?.name
+      );
+    });
+
+    if (duplicateEntry) {
+      setMessage("This subject is already scheduled on this day.");
+      return;
+    }
+
+    // --- Conflict Subject Check (same day) ---
     const conflictingEntries = entries.filter((entry) => {
       if (entry.id === selectedEntry.id) return false; // Exclude the entry being edited
       if (entry.day !== form.day) return false;
@@ -257,6 +272,19 @@ export default function Schedule() {
       setIsSaving(false);
       return;
     }
+    
+    // --- Duplicate Subject Check (same day) ---
+        const duplicateEntry = entries.find((entry) => {
+          return (
+            entry.day === form.day &&
+            entry.subject === subjects.find(s => s.id === form.subject_id)?.name
+          );
+        });
+
+        if (duplicateEntry) {
+          setMessage("This subject is already scheduled on this day.");
+          return;
+        }
 
     const conflictingEntries = entries.filter((entry) => {
       if (entry.day !== form.day) {
