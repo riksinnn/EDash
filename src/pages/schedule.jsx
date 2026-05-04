@@ -10,6 +10,7 @@ import { supabase } from "../lib/supabase";
 import { SelectField } from "../components/ui/SelectField";
 import { TimeField } from "../components/ui/TimeField";
 
+
 function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
@@ -24,6 +25,7 @@ export default function Schedule() {
   const [selectedDay, setSelectedDay] = useState(days[new Date().getDay()]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [entries, setEntries] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
   const [subjects, setSubjects] = useState([]);
   const [message, setMessage] = useState("");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -87,6 +89,15 @@ export default function Schedule() {
 
     loadInitialData();
   }, [user]);
+
+
+  //AUtosync Day Selection in Form when changing days
+  useEffect(() => {
+    setForm((current) => ({
+      ...current,
+      day: selectedDay,
+    }));
+  }, [selectedDay]);
 
   const dayEntries = useMemo(
     () =>
@@ -174,7 +185,8 @@ export default function Schedule() {
 
     if (error) {
       console.error("Error updating schedule:", error);
-setMessage("We couldn't update that class yet.");
+      setMessage("We couldn't update that class yet.");
+      setIsSaving(false);
       return;
     }
 
@@ -215,11 +227,18 @@ setMessage("We couldn't update that class yet.");
   };
 
   const handleSchedule = async () => {
-    if (!form.subject_id || !user) return;
+  if (isSaving) return; // prevent double click
+  setIsSaving(true);
+
+  if (!form.subject_id || !user) {
+    setIsSaving(false);
+    return;
+  }
 
     // --- Time Overlap Validation ---
     if (!form.start_time || !form.end_time) {
       setMessage("Please select a start and end time.");
+      setIsSaving(false);
       return;
     }
 
@@ -235,6 +254,7 @@ setMessage("We couldn't update that class yet.");
 
     if (newStartTime >= newEndTime) {
       setMessage("End time must be after start time.");
+      setIsSaving(false);
       return;
     }
 
@@ -252,6 +272,7 @@ setMessage("We couldn't update that class yet.");
     if (conflictingEntries.length > 0) {
       const conflictingSubjects = conflictingEntries.map((e) => e.subject).join(", ");
       setMessage(`This time conflicts with: ${conflictingSubjects}.`);
+      setIsSaving(false);
       return;
     }
     // --- End Validation ---
@@ -273,6 +294,7 @@ setMessage("We couldn't update that class yet.");
     if (error) {
       console.error(error);
       setMessage("We couldn't save that class yet.");
+      setIsSaving(false);
       return;
     }
 
@@ -292,6 +314,7 @@ setMessage("We couldn't update that class yet.");
     setSelectedDay(form.day);
     setMessage("");
     setIsDialogOpen(false);
+    setIsSaving(false);
   };
 
   return (
@@ -426,7 +449,9 @@ setMessage("We couldn't update that class yet.");
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSchedule}>Schedule</Button>
+              <Button onClick={handleSchedule} disabled={isSaving}>
+                {isSaving ? "Saving..." : "Schedule"}
+              </Button>
           </div>
         </div>
       </AlertDialog>
@@ -488,7 +513,9 @@ setMessage("We couldn't update that class yet.");
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateSchedule}>Save Changes</Button>
+            <Button onClick={handleUpdateSchedule} disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
           </div>
         </div>
       </AlertDialog>
@@ -514,9 +541,10 @@ setMessage("We couldn't update that class yet.");
             </Button>
             <Button
               onClick={handleDeleteSchedule}
+              disabled={isSaving}
               className="bg-red-600 text-white hover:bg-red-700"
             >
-              Delete
+              {isSaving ? "Deleting..." : "Delete"}
             </Button>
           </div>
         </div>
