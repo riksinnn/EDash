@@ -112,18 +112,32 @@ export default function Schedule() {
     [entries, selectedDay],
   );
 
-  const openEditDialog = (entry) => {
-    setForm({
-      subject_id: String(entry.subject_id), // Ensure this is a string for the select field,
-      days: [entry.day],
-      start_time: entry.startTime,
-      end_time: entry.endTime,
-    });
+    const openEditDialog = (entry) => {
+      setIsSaving(false);
 
-    setSelectedEntry(entry);
-    setMessage("");
-    setIsEditDialogOpen(true);
-  };
+      // 🔥 find all entries with same subject + same time
+      const relatedEntries = entries.filter((e) => {
+        return (
+          e.subject_id === entry.subject_id &&
+          e.startTime === entry.startTime &&
+          e.endTime === entry.endTime
+        );
+      });
+
+      // 🔥 extract all days
+      const relatedDays = relatedEntries.map((e) => e.day);
+
+      setForm({
+        subject_id: String(entry.subject_id),
+        days: relatedDays, // ✅ MULTIPLE DAYS NOW
+        start_time: entry.startTime,
+        end_time: entry.endTime,
+      });
+
+      setSelectedEntry(entry);
+      setMessage("");
+      setIsEditDialogOpen(true);
+    };
 
     const openDeleteDialog = (entry) => {
       setSelectedEntry(entry);
@@ -136,6 +150,7 @@ export default function Schedule() {
     if (isSaving) return;
     setIsSaving(true);
 
+ try {
     if (!form.subject_id || !user || !selectedEntry) {
       setIsSaving(false);
       return;
@@ -163,8 +178,33 @@ export default function Schedule() {
       return;
     }
 
+    const originalEntries = entries.filter((e) => {
+     return (
+      e.subject_id === selectedEntry.subject_id &&
+      e.startTime === selectedEntry.startTime &&
+      e.endTime === selectedEntry.endTime
+     );
+    });
+
+    //get ALL existing days for this subject (not just same time)
+    const existingEntries = entries.filter(
+      (e) => e.subject_id === selectedEntry.subject_id
+    );
+
+    const existingDays = existingEntries.map((e) => e.day);
+
+    // split daysToUpdate properly into daysToUpdate and daysToAdd
+    const daysToUpdate = form.days.filter((d) => existingDays.includes(d));
+    const daysToAdd = form.days.filter((d) => !existingDays.includes(d));
+
     const conflictingEntries = entries.filter((entry) => {
-      if (entry.id === selectedEntry.id) return false;
+      //ignore ALL entries of the same subject (the one being edited)
+      const isSameSubjectBeingEdited =
+        entry.subject_id === selectedEntry.subject_id;
+
+      if (isSameSubjectBeingEdited) return false;
+
+      // only check selected days
       if (!form.days.includes(entry.day)) return false;
 
       const existingStartTime = timeToDate(entry.startTime);
@@ -180,67 +220,131 @@ export default function Schedule() {
       return;
     }
 
-    const schedulePayload = {
-      subject_id: form.subject_id,
-      day_of_week: dayMap[form.days[0]],
-      start_time: `${form.start_time}:00`,
-      end_time: `${form.end_time}:00`,
-    };
+    await Promise.all(
+      existingEntries
+        .filter((entry) => daysToUpdate.includes(entry.day))
+        .map((entry) =>
+          supabase
+            .from("schedule")
+            .update({
+              subject_id: form.subject_id,
+              start_time: `${form.start_time}:00`,
+              end_time: `${form.end_time}:00`,
+            })
+            .eq("id", entry.id)
+        )
+    );
 
-    // 🔥 FAST UPDATE (removed .select())
-    const { error } = await supabase
-      .from("schedule")
-      .update(schedulePayload)
-      .eq("id", selectedEntry.id);
+    let insertedData = [];
 
-    if (error) {
-      console.error(error);
-      setMessage("We couldn't update that class yet.");
-      setIsSaving(false);
-      return;
+    if (daysToAdd.length > 0) {
+      const payloads = daysToAdd.map((day) => ({
+        user_id: user.id,
+        subject_id: form.subject_id,
+        day_of_week: dayMap[day],
+        start_time: `${form.start_time}:00`,
+        end_time: `${form.end_time}:00`,
+      }));
+
+      const { data, error } = await supabase
+        .from("schedule")
+        .insert(payloads)
+        .select();
+
+      if (error) {
+        console.error(error);
+        setMessage("Failed to add new schedule days.");
+        setIsSaving(false);
+        return;
+      }
+
+      insertedData = data;
     }
 
-    const selectedSubject = subjects.find(s => s.id === form.subject_id);
 
-    // 🔥 instant UI update (no waiting)
+    const selectedSubject = subjects.find(
+        (s) => String(s.id) === String(form.subject_id)
+      );
+
     setEntries((current) =>
-      current.map((entry) =>
-        entry.id === selectedEntry.id
-          ? {
-              ...entry,
-              subject_id: form.subject_id,
-              subject: selectedSubject?.name || entry.subject,
-              day: form.days[0],
-              startTime: form.start_time,
-              endTime: form.end_time,
-              color: selectedSubject?.color,
-            }
-          : entry
-      )
+      current.map((entry) => {
+        const isSameEntry =
+          entry.subject_id === selectedEntry.subject_id &&
+          daysToUpdate.includes(entry.day);
+
+        if (!isSameEntry) return entry;
+
+        return {
+          ...entry,
+          subject_id: form.subject_id,
+          subject: selectedSubject?.name || entry.subject,
+          startTime: form.start_time,
+          endTime: form.end_time,
+          color: selectedSubject?.color,
+        };
+      })
     );
+
+    // add newly inserted entries
+    if (insertedData.length > 0) {
+      const newEntries = insertedData.map((item) => ({
+        id: item.id,
+        subject_id: item.subject_id,
+        day: days[item.day_of_week],
+        subject: selectedSubject?.name || "Unnamed Class",
+        startTime: item.start_time.slice(0, 5),
+        endTime: item.end_time.slice(0, 5),
+        color: selectedSubject?.color,
+      }));
+
+      setEntries((current) => [...current, ...newEntries]);
+    }
 
     setIsEditDialogOpen(false);
     setSelectedEntry(null);
     setMessage("Class updated successfully");
+
+} catch (err) {
+  console.error(err);
+  setMessage("Something went wrong.");
+}
     setIsSaving(false); 
 
     setTimeout(() => {
       setMessage("");
     }, 2000);
   };
+  
  //END OF UPDATE SCHEDULE
 
 //FOR DELETING SCHEDULE
   const handleDeleteSchedule = async () => {
     if (!selectedEntry) return;
 
-    const { error } = await supabase.from("schedule").delete().eq("id", selectedEntry.id);
+    const { error } = await supabase
+    .from("schedule")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("subject_id", selectedEntry.subject_id)
+    .eq("start_time", `${selectedEntry.startTime}:00`)
+    .eq("end_time", `${selectedEntry.endTime}:00`)
 
     if (error) {
       console.error("Error deleting schedule:", error);
       alert("Could not delete the class.");
     } else {
-      setEntries((current) => current.filter((entry) => entry.id !== selectedEntry.id));
+
+      setEntries((current) =>
+        current.filter(
+          (entry) =>
+            !(
+              entry.subject_id === selectedEntry.subject_id &&
+              entry.startTime === selectedEntry.startTime &&
+              entry.endTime === selectedEntry.endTime
+            )
+        )
+      );
+
       setMessage("Class deleted successfully");
     }
 
@@ -547,19 +651,38 @@ export default function Schedule() {
             ))}
           </SelectField>
 
-          <SelectField
-            label="Day"
-            value={form.days?.[0] || ""}
-            onChange={(value) =>
-              setForm((current) => ({ ...current, days: [value] }))
-            }
-          >
-            {days.map((day) => (
-              <option key={day} value={day}>
-                {day}
-              </option>
-            ))}
-          </SelectField>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Days</label>
+            <div className="grid grid-cols-4 gap-2 rounded-lg bg-gray-100 p-2 sm:grid-cols-7">
+              {days.map((day) => {
+                const isSelected = form.days?.includes(day);
+
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => {
+                      setForm((current) => {
+                        const newDays = isSelected
+                          ? current.days.filter((d) => d !== day)
+                          : [...current.days, day];
+
+                        return { ...current, days: newDays };
+                      });
+                    }}
+                    className={cn(
+                      "rounded-md px-3 py-2 text-center text-sm font-medium transition-colors",
+                      isSelected
+                        ? "bg-blue-500 text-white shadow-sm"
+                        : "bg-white text-gray-600 hover:bg-gray-50"
+                    )}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <TimeScrollPicker
