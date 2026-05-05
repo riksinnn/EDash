@@ -30,6 +30,7 @@ export default function Schedule() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
+  const [deleteAllDays, setDeleteAllDays] = useState(false);
   const [form, setForm] = useState({
     subject_id: "",
     days: [days[new Date().getDay()]], // Use 'days' array for multi-day support
@@ -141,6 +142,7 @@ export default function Schedule() {
 
     const openDeleteDialog = (entry) => {
       setSelectedEntry(entry);
+      setDeleteAllDays(false); // ✅ reset every time
       setIsDeleteDialogOpen(true);
     };
 
@@ -321,29 +323,48 @@ export default function Schedule() {
   const handleDeleteSchedule = async () => {
     if (!selectedEntry) return;
 
-    const { error } = await supabase
-    .from("schedule")
-    .delete()
-    .eq("user_id", user.id)
-    .eq("subject_id", selectedEntry.subject_id)
-    .eq("start_time", `${selectedEntry.startTime}:00`)
-    .eq("end_time", `${selectedEntry.endTime}:00`)
+    
 
-    if (error) {
-      console.error("Error deleting schedule:", error);
+    const { error } = await supabase
+    let query = supabase
+      .from("schedule")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("subject_id", selectedEntry.subject_id);
+
+    if (deleteAllDays) {
+      //  delete ALL matching days (group)
+      query = query
+        .eq("start_time", `${selectedEntry.startTime}:00`)
+        .eq("end_time", `${selectedEntry.endTime}:00`);
+    } else {
+      //  delete ONLY this specific day
+      query = query.eq("day_of_week", dayMap[selectedEntry.day]);
+    }
+
+    const { error: deleteError } = await query;
+
+    if (deleteError) {
+      console.error("Error deleting schedule:", deleteError); 
       alert("Could not delete the class.");
     } else {
 
-      setEntries((current) =>
-        current.filter(
-          (entry) =>
-            !(
-              entry.subject_id === selectedEntry.subject_id &&
-              entry.startTime === selectedEntry.startTime &&
-              entry.endTime === selectedEntry.endTime
-            )
-        )
-      );
+      setEntries((current) => {
+        if (deleteAllDays) {
+          // remove whole group
+          return current.filter(
+            (entry) =>
+              !(
+                entry.subject_id === selectedEntry.subject_id &&
+                entry.startTime === selectedEntry.startTime &&
+                entry.endTime === selectedEntry.endTime
+              )
+          );
+        } else {
+          // remove only selected day
+          return current.filter((entry) => entry.id !== selectedEntry.id);
+        }
+      });
 
       setMessage("Class deleted successfully");
     }
@@ -727,10 +748,22 @@ export default function Schedule() {
       >
         <div className="space-y-4">
           <p className="text-lg text-[#6e7c69]">
-            Are you sure you want to delete{" "}
-            <strong>{selectedEntry?.subject}</strong>? This action cannot be
-            undone.
+            {deleteAllDays
+              ? "This will delete all scheduled days for this class."
+              : "This will delete only this day's schedule."}
           </p>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={deleteAllDays}
+              onChange={(e) => setDeleteAllDays(e.target.checked)}
+            />
+            <label className="text-sm text-gray-600">
+              Delete all days for this class
+            </label>
+          </div>
+
           <div className="flex justify-end gap-3">
             <Button
               variant="outline"
