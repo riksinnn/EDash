@@ -55,7 +55,7 @@ export default function Schedule() {
       // Fetch schedule entries with subject names
       const { data: scheduleData, error: scheduleError } = await supabase
         .from("schedule")
-        .select("id, day_of_week, start_time, end_time, subjects ( name, color )")
+        .select("id, subject_id, day_of_week, start_time, end_time, subjects ( name, color )")
         .eq("user_id", user.id);
 
       if (scheduleError) {
@@ -63,7 +63,7 @@ export default function Schedule() {
       } else if (scheduleData) {
       const formattedEntries = scheduleData.map((entry) => ({
         id: entry.id,
-        subject_id: entry.subject_id, // ADD THIS
+        subject_id: String(entry.subject_id), // ADD THIS
         day: days[entry.day_of_week],
         subject: entry.subjects?.name || "Unnamed Class",
         startTime: entry.start_time?.slice(0, 5),
@@ -95,7 +95,7 @@ export default function Schedule() {
   useEffect(() => {
     setForm((current) => ({
       ...current,
-      day: selectedDay,
+      days: [selectedDay],
     }));
   }, [selectedDay]);
 
@@ -114,8 +114,8 @@ export default function Schedule() {
 
   const openEditDialog = (entry) => {
     setForm({
-      subject_id: entry.subject_id,
-      day: entry.day,
+      subject_id: String(entry.subject_id), // Ensure this is a string for the select field,
+      days: [entry.day],
       start_time: entry.startTime,
       end_time: entry.endTime,
     });
@@ -130,6 +130,8 @@ export default function Schedule() {
       setIsDeleteDialogOpen(true);
     };
 
+
+    //FOR UPATING SCHEDULE
     const handleUpdateSchedule = async () => {
     if (isSaving) return;
     setIsSaving(true);
@@ -180,7 +182,7 @@ export default function Schedule() {
 
     const schedulePayload = {
       subject_id: form.subject_id,
-      day_of_week: dayMap[form.days],
+      day_of_week: dayMap[form.days[0]],
       start_time: `${form.start_time}:00`,
       end_time: `${form.end_time}:00`,
     };
@@ -208,7 +210,7 @@ export default function Schedule() {
               ...entry,
               subject_id: form.subject_id,
               subject: selectedSubject?.name || entry.subject,
-              day: form.days,
+              day: form.days[0],
               startTime: form.start_time,
               endTime: form.end_time,
               color: selectedSubject?.color,
@@ -219,10 +221,16 @@ export default function Schedule() {
 
     setIsEditDialogOpen(false);
     setSelectedEntry(null);
-    setMessage("");
-    setIsSaving(false); // 🔥 CRITICAL FIX
-  };
+    setMessage("Class updated successfully");
+    setIsSaving(false); 
 
+    setTimeout(() => {
+      setMessage("");
+    }, 2000);
+  };
+ //END OF UPDATE SCHEDULE
+
+//FOR DELETING SCHEDULE
   const handleDeleteSchedule = async () => {
     if (!selectedEntry) return;
 
@@ -233,12 +241,15 @@ export default function Schedule() {
       alert("Could not delete the class.");
     } else {
       setEntries((current) => current.filter((entry) => entry.id !== selectedEntry.id));
+      setMessage("Class deleted successfully");
     }
 
     setIsDeleteDialogOpen(false);
     setSelectedEntry(null);
   };
+//END OF DELETE SCHEDULE
 
+//END OF DELETE SCHEDULE
   const handleSchedule = async () => {
     if (!form.subject_id || !user || form.days.length === 0) {
       setIsSaving(false);
@@ -324,13 +335,25 @@ export default function Schedule() {
     if (form.days.length > 0) {
       setSelectedDay(form.days[0]); // Set the selected day to the first new day
     }
-    setMessage("");
+    setMessage("Class scheduled successfully");
     setIsDialogOpen(false);
     setIsSaving(false);
   };
+//END OF SCHEDULE HANDLER
 
   return (
     <div className="space-y-7">
+
+      {/* ✅ GLOBAL TOAST MESSAGE */}
+      {message && (
+        <div
+          className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow text-white
+            ${message.includes("successfully") ? "bg-green-500" : "bg-red-500"}`}
+        >
+          {message}
+        </div>
+      )}
+
       <section className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap gap-3">
           {days.map((day) => {
@@ -487,7 +510,9 @@ export default function Schedule() {
             />
           </div>
 
-          {message ? <p className="text-sm text-red-600">{message}</p> : null}
+          {!message.includes("successfully") && (
+            <p className="text-sm text-red-600">{message}</p>
+          )}
 
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -509,7 +534,7 @@ export default function Schedule() {
         <div className="space-y-6">
           <SelectField
             label="Subject"
-            value={form.subject_id}
+            value={String(form.subject_id || "")}
             onChange={(value) =>
               setForm((current) => ({ ...current, subject_id: value }))
             }
@@ -524,8 +549,10 @@ export default function Schedule() {
 
           <SelectField
             label="Day"
-            value={form.days}
-            onChange={(value) => setForm((current) => ({ ...current, day: value }))}
+            value={form.days?.[0] || ""}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, days: [value] }))
+            }
           >
             {days.map((day) => (
               <option key={day} value={day}>
@@ -554,7 +581,9 @@ export default function Schedule() {
             />
           </div>
 
-          {message ? <p className="text-sm text-red-600">{message}</p> : null}
+          {!message.includes("successfully") && (
+            <p className="text-sm text-red-600">{message}</p>
+          )}
 
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>

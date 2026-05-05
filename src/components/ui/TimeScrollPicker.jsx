@@ -3,31 +3,36 @@ import { useState, useEffect, useRef } from "react";
 function WheelColumn({ items, value, onChange }) {
   const itemHeight = 40;
   const containerRef = useRef(null);
+  const timeoutRef = useRef(null);
+  const isProgrammatic = useRef(false);
 
   // ✅ Auto-center selected value on mount/update
   useEffect(() => {
-  if (!containerRef.current) return;
+    if (!containerRef.current) return;
 
-  const index = items.findIndex((item) => item === value);
+    const index = items.findIndex((item) => item === value);
+    if (index === -1) return;
 
-  if (index === -1) return;
+    const target = index * itemHeight;
 
-  const target = index * itemHeight;
+    isProgrammatic.current = true;
 
-  // 🔥 force scroll AFTER render
-  requestAnimationFrame(() => {
-    containerRef.current.scrollTop = target;
-  });
-}, [value, items]);
+    requestAnimationFrame(() => {
+      containerRef.current.scrollTop = target;
 
-let timeoutId = null;
+      setTimeout(() => {
+        isProgrammatic.current = false;
+      }, 20);
+    });
+  }, [value, items]);
 
 const handleScroll = (e) => {
+  if (isProgrammatic.current) return;
   const el = e.target;
 
-  if (timeoutId) clearTimeout(timeoutId);
+  if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
-  timeoutId = setTimeout(() => {
+  timeoutRef.current = setTimeout(() => {
     const index = Math.round(el.scrollTop / itemHeight);
 
     const clampedIndex = Math.max(0, Math.min(items.length - 1, index));
@@ -116,7 +121,8 @@ export function TimeScrollPicker({ label, value, onChange }) {
     const displayHour = hh % 12 || 12;
 
     setHour(displayHour);
-    setMinute(String(m).padStart(2, "0")); // 🔥 important
+    const cleanMinute = m.slice(0, 2);
+    setMinute(cleanMinute);
     setPeriod(isPM ? "PM" : "AM");
   }, [value]);
 
