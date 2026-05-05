@@ -26,7 +26,8 @@ export default function Schedule() {
   const [entries, setEntries] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [subjects, setSubjects] = useState([]);
-  const [message, setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
@@ -49,50 +50,76 @@ export default function Schedule() {
     return `${formattedHours}:${minutes} ${ampm}`;
   };
 
-  useEffect(() => {
-    const loadInitialData = async () => {
-      if (!user?.id) return;
+    const showMessage = (type, text) => {
+    if (type === "error") {
+      setErrorMessage("");
+      setSuccessMessage("");
+      setTimeout(() => setErrorMessage(text), 0);
+    } else {
+      setSuccessMessage("");
+      setErrorMessage("");
+      setTimeout(() => setSuccessMessage(text), 0);
+    }
+  };
 
-      // Fetch schedule entries with subject names
-      const { data: scheduleData, error: scheduleError } = await supabase
-        .from("schedule")
-        .select("id, subject_id, day_of_week, start_time, end_time, subjects ( name, color )")
-        .eq("user_id", user.id);
+  // Auto-clear messages after 2.5 seconds
+useEffect(() => {
 
-      if (scheduleError) {
-        console.error("Error fetching schedule:", scheduleError);
-      } else if (scheduleData) {
+  if (!errorMessage && !successMessage) return;
+
+    const timer = setTimeout(() => {
+      setErrorMessage("");
+      setSuccessMessage("");
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [errorMessage, successMessage]);
+
+
+  // Load schedule and subjects on mount
+ useEffect(() => {
+  const loadInitialData = async () => {
+    if (!user?.id) return;
+
+    const { data: scheduleData, error: scheduleError } = await supabase
+      .from("schedule")
+      .select("id, subject_id, day_of_week, start_time, end_time, subjects ( name, color )")
+      .eq("user_id", user.id);
+
+    if (scheduleError) {
+      console.error("Error fetching schedule:", scheduleError);
+    } else if (scheduleData) {
       const formattedEntries = scheduleData.map((entry) => ({
         id: entry.id,
-        subject_id: String(entry.subject_id), // ADD THIS
+        subject_id: String(entry.subject_id),
         day: days[entry.day_of_week],
         subject: entry.subjects?.name || "Unnamed Class",
         startTime: entry.start_time?.slice(0, 5),
         endTime: entry.end_time?.slice(0, 5),
         color: entry.subjects?.color,
       }));
-        setEntries(formattedEntries);
-      }
 
-      // Fetch subjects for the dropdown
-      const { data: subjectsData, error: subjectsError } = await supabase
-        .from("subjects")
-        .select("id, name, color")
-        .eq("user_id", user.id)
-        .order("name");
+      setEntries(formattedEntries);
+    }
 
-      if (subjectsError) {
-        console.error("Error fetching subjects:", subjectsError);
-      } else {
-        setSubjects(subjectsData);
-      }
-    };
+    const { data: subjectsData, error: subjectsError } = await supabase
+      .from("subjects")
+      .select("id, name, color")
+      .eq("user_id", user.id)
+      .order("name");
 
-    loadInitialData();
-  }, [user]);
+    if (subjectsError) {
+      console.error("Error fetching subjects:", subjectsError);
+    } else {
+      setSubjects(subjectsData);
+    }
+  };
+
+  loadInitialData();
+}, [user]);
 
 
-  //AUtosync Day Selection in Form when changing days
+  //Autosync Day Selection in Form when changing days
   useEffect(() => {
     setForm((current) => ({
       ...current,
@@ -136,13 +163,14 @@ export default function Schedule() {
       });
 
       setSelectedEntry(entry);
-      setMessage("");
+      setErrorMessage("");
+      setSuccessMessage("");
       setIsEditDialogOpen(true);
     };
 
     const openDeleteDialog = (entry) => {
       setSelectedEntry(entry);
-      setDeleteAllDays(false); // ✅ reset every time
+      setDeleteAllDays(false); // reset every time
       setIsDeleteDialogOpen(true);
     };
 
@@ -150,7 +178,6 @@ export default function Schedule() {
     //FOR UPATING SCHEDULE
     const handleUpdateSchedule = async () => {
     if (isSaving) return;
-    setIsSaving(true);
 
  try {
     if (!form.subject_id || !user || !selectedEntry) {
@@ -159,10 +186,12 @@ export default function Schedule() {
     }
 
     if (!form.start_time || !form.end_time) {
-      setMessage("Please select a start and end time.");
+      setErrorMessage("Select both start and end time.");
       setIsSaving(false);
       return;
     }
+
+    setIsSaving(true);
 
     const timeToDate = (time) => {
       const d = new Date();
@@ -175,7 +204,7 @@ export default function Schedule() {
     const newEndTime = timeToDate(form.end_time);
 
     if (newStartTime >= newEndTime) {
-      setMessage("End time must be after start time.");
+      setErrorMessage("End time must be after start time.");
       setIsSaving(false);
       return;
     }
@@ -216,8 +245,17 @@ export default function Schedule() {
     });
 
     if (conflictingEntries.length > 0) {
-      const conflictingSubjects = conflictingEntries.map((e) => e.subject).join(", ");
-      setMessage(`This time conflicts with: ${conflictingSubjects}.`);
+      if (conflictingEntries.length === 1) {
+        const e = conflictingEntries[0];
+        setErrorMessage(
+          `Time overlaps with ${e.subject} on ${e.day} (${formatTime(e.startTime)} - ${formatTime(e.endTime)}).`
+        );
+      } else {
+        setErrorMessage(
+          `Time overlaps with multiple classes. Please choose another time.`
+        );
+      }
+
       setIsSaving(false);
       return;
     }
@@ -255,7 +293,7 @@ export default function Schedule() {
 
       if (error) {
         console.error(error);
-        setMessage("Failed to add new schedule days.");
+        setErrorMessage("Failed to add new schedule days.");
         setIsSaving(false);
         return;
       }
@@ -304,17 +342,13 @@ export default function Schedule() {
 
     setIsEditDialogOpen(false);
     setSelectedEntry(null);
-    setMessage("Class updated successfully");
+    setSuccessMessage("Class updated successfully");
 
 } catch (err) {
   console.error(err);
-  setMessage("Something went wrong.");
+  setErrorMessage("Something went wrong.");
 }
     setIsSaving(false); 
-
-    setTimeout(() => {
-      setMessage("");
-    }, 2000);
   };
   
  //END OF UPDATE SCHEDULE
@@ -366,7 +400,7 @@ export default function Schedule() {
         }
       });
 
-      setMessage("Class deleted successfully");
+      setSuccessMessage("Class deleted successfully");
     }
 
     setIsDeleteDialogOpen(false);
@@ -374,21 +408,33 @@ export default function Schedule() {
   };
 //END OF DELETE SCHEDULE
 
-//END OF DELETE SCHEDULE
+//START SCHEDULE HANDLER
   const handleSchedule = async () => {
-    if (!form.subject_id || !user || form.days.length === 0) {
-      setIsSaving(false);
+
+    // VALIDATION
+    if (!form.subject_id) {
+      setErrorMessage("Please select a subject.");
+      return;
+    }
+
+    if (!form.days || form.days.length === 0) {
+      setErrorMessage("Please select at least one day.");
+      return;
+    }
+
+    if (!form.start_time || !form.end_time) {
+      setErrorMessage("Please select both start and end time.");
+      return;
+    }
+
+    if (!user) {
+      setErrorMessage("User not found. Please log in again.");
       return;
     }
 
     setIsSaving(true);
-    setMessage("");
-
-    if (!form.start_time || !form.end_time) {
-      setMessage("Please select a start and end time.");
-      setIsSaving(false);
-      return;
-    }
+    setErrorMessage("");
+    setSuccessMessage("");
 
     const timeToDate = (time) => {
       const d = new Date();
@@ -401,7 +447,7 @@ export default function Schedule() {
     const newEndTime = timeToDate(form.end_time);
 
     if (newStartTime >= newEndTime) {
-      setMessage("End time must be after start time.");
+      setErrorMessage("End time must be after start time.");
       setIsSaving(false);
       return;
     }
@@ -417,10 +463,17 @@ export default function Schedule() {
     });
 
     if (conflictingEntries.length > 0) {
-      const conflictingInfo = conflictingEntries
-        .map((e) => `${e.subject} on ${e.day}`)
-        .join(", ");
-      setMessage(`This time conflicts with: ${conflictingInfo}.`);
+      if (conflictingEntries.length === 1) {
+        const e = conflictingEntries[0];
+        setErrorMessage(
+          `Time overlaps with ${e.subject} on ${e.day} (${formatTime(e.startTime)} - ${formatTime(e.endTime)}).`
+        );
+      } else {
+        setErrorMessage(
+          `Time overlaps with multiple classes. Please choose another time.`
+        );
+      }
+
       setIsSaving(false);
       return;
     }
@@ -438,7 +491,7 @@ export default function Schedule() {
 
     if (error) {
       console.error(error);
-      setMessage("We couldn't save the classes. Please try again.");
+      setErrorMessage("We couldn't save the classes. Please try again.");
       setIsSaving(false);
       return;
     }
@@ -460,7 +513,7 @@ export default function Schedule() {
     if (form.days.length > 0) {
       setSelectedDay(form.days[0]); // Set the selected day to the first new day
     }
-    setMessage("Class scheduled successfully");
+    setSuccessMessage("Class scheduled successfully");
     setIsDialogOpen(false);
     setIsSaving(false);
   };
@@ -469,15 +522,21 @@ export default function Schedule() {
   return (
     <div className="space-y-7">
 
-      {/* ✅ GLOBAL TOAST MESSAGE */}
-      {message && (
-        <div
-          className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow text-white
-            ${message.includes("successfully") ? "bg-green-500" : "bg-red-500"}`}
-        >
-          {message}
-        </div>
-      )}
+      {/* GLOBAL TOAST MESSAGE */}
+        {(errorMessage || successMessage) && (
+          <div
+            className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow text-white transition-all duration-300
+            ${errorMessage ? "bg-red-500" : "bg-green-500"}`}
+          >
+            {errorMessage || successMessage}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow text-white bg-green-500">
+            {successMessage}
+          </div>
+        )}
 
       <section className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap gap-3">
@@ -513,7 +572,8 @@ export default function Schedule() {
               start_time: "",
               end_time: "",
             });
-            setMessage(""); // Clear any previous error messages
+            setErrorMessage(""); // Clear any previous error messages
+            setSuccessMessage(""); // Clear any previous success messages
             setIsDialogOpen(true);
           }}
           aria-label="Schedule class"
@@ -635,10 +695,6 @@ export default function Schedule() {
             />
           </div>
 
-          {!message.includes("successfully") && (
-            <p className="text-sm text-red-600">{message}</p>
-          )}
-
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
@@ -725,9 +781,6 @@ export default function Schedule() {
             />
           </div>
 
-          {!message.includes("successfully") && (
-            <p className="text-sm text-red-600">{message}</p>
-          )}
 
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
