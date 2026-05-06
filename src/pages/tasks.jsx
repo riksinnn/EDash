@@ -33,6 +33,7 @@ export default function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [message, setMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const [editingTask, setEditingTask] = useState(null); // State to hold the task being edited
   const [form, setForm] = useState({
     title: "",
@@ -189,6 +190,9 @@ export default function Tasks() {
   };
 
   const handleCreateTask = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+
     if (!form.title.trim() || !user) return;
 
 
@@ -209,6 +213,7 @@ export default function Tasks() {
     if (error) {
       console.error(error);
       setMessage("We couldn't save that task yet.");
+      setIsSaving(false);
       return;
     }
 
@@ -228,9 +233,13 @@ export default function Tasks() {
     setForm({ title: "", status: "Ongoing", subject_id: "", deadline: null });
     setMessage("");
     setIsDialogOpen(false);
+    setIsSaving(false);
   };
 
   const handleUpdateTask = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+
     if (!form.title.trim() || !user || !editingTask) return;
 
     const taskPayload = {
@@ -250,6 +259,7 @@ export default function Tasks() {
     if (error) {
       console.error("Error updating task:", error);
       setMessage("We couldn't update that task yet.");
+      setIsSaving(false);
       return;
     }
 
@@ -268,6 +278,7 @@ export default function Tasks() {
       )
     );
 
+    setIsSaving(false);
     closeDialog();
   };
 
@@ -505,7 +516,15 @@ export default function Tasks() {
             <Button variant="outline" onClick={closeDialog}>
               Cancel
             </Button>
-            <Button onClick={handleSave}>{editingTask ? "Save Changes" : "Create Task"}</Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving
+                ? editingTask
+                  ? "Saving..."
+                  : "Creating..."
+                : editingTask
+                  ? "Save Changes"
+                  : "Create Task"}
+            </Button>
           </div>
         </div>
       </AlertDialog>
