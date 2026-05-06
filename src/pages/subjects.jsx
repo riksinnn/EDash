@@ -82,6 +82,18 @@ export default function Subjects() {
   const handleCreateSubject = async () => {
     if (!form.name.trim() || !user) return;
 
+    const normalizedName = form.name.trim().toLowerCase();
+
+    const subjectExists = subjects.some(
+      (subject) =>
+        subject.name.trim().toLowerCase() === normalizedName
+    );
+
+    if (subjectExists) {
+      setMessage("A subject with this name already exists.");
+      return;
+    }
+
     const { error } = await supabase.rpc("create_subject_for_user", {
       name: form.name.trim(),
       room: form.room.trim() || null,
@@ -101,6 +113,7 @@ export default function Subjects() {
 
   // UPDATE - Open edit dialog with subject data
   const handleOpenEdit = (subject) => {
+    setMessage("");
     setSelectedSubject(subject);
     setForm({
       name: subject.name,
@@ -113,6 +126,19 @@ export default function Subjects() {
   // UPDATE - Save edited subject
   const handleUpdateSubject = async () => {
     if (!form.name.trim() || !selectedSubject) return;
+
+    const normalizedName = form.name.trim().toLowerCase();
+
+    const subjectExists = subjects.some(
+      (subject) =>
+        subject.id !== selectedSubject.id &&
+        subject.name.trim().toLowerCase() === normalizedName
+    );
+
+    if (subjectExists) {
+      setMessage("A subject with this name already exists.");
+      return;
+    }
 
     const { error } = await supabase
       .from("subjects")
@@ -170,7 +196,10 @@ export default function Subjects() {
         <Button
           variant="icon"
           className="h-12 w-12"
-          onClick={() => setIsDialogOpen(true)}
+          onClick={() => {
+            setMessage("");
+            setIsDialogOpen(true);
+          }}
           aria-label="Add subject"
         >
           <Plus size={22} />
