@@ -9,6 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 import { SelectField } from "../components/ui/SelectField";
 import { TimeScrollPicker } from "../components/ui/TimeScrollPicker";
+import { useNavigate } from "react-router-dom";
 
 function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -20,9 +21,11 @@ const dayMap = {
 };
 
 export default function Schedule() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedDay, setSelectedDay] = useState(days[new Date().getDay()]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isNoSubjectsOpen, setIsNoSubjectsOpen] = useState(false);
   const [entries, setEntries] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [subjects, setSubjects] = useState([]);
@@ -565,17 +568,25 @@ useEffect(() => {
           variant="icon"
           className="h-12 w-12"
           onClick={() => {
-            // Reset form for creating a new schedule, using the currently selected day as the default
-            setForm({
-              subject_id: "",
-              days: [selectedDay],
-              start_time: "",
-              end_time: "",
-            });
-            setErrorMessage(""); // Clear any previous error messages
-            setSuccessMessage(""); // Clear any previous success messages
-            setIsDialogOpen(true);
-          }}
+              // NO SUBJECTS YET
+              if (subjects.length === 0) {
+                setIsNoSubjectsOpen(true);
+                return;
+              }
+
+              // NORMAL FLOW
+              setForm({
+                subject_id: "",
+                days: [selectedDay],
+                start_time: "",
+                end_time: "",
+              });
+
+              setErrorMessage("");
+              setSuccessMessage("");
+
+              setIsDialogOpen(true);
+            }}
           aria-label="Schedule class"
         >
           <Plus size={22} />
@@ -629,6 +640,13 @@ useEffect(() => {
         onClose={() => setIsDialogOpen(false)}
       >
         <div className="max-h-[80vh] space-y-6 overflow-y-auto pr-1">
+
+          {subjects.length === 0 && (
+            <div className="rounded-xl border border-dashed border-[#d8cfbf] bg-[#f8f5ef] p-4 text-sm text-[#6e7c69]">
+              No subjects yet. Add your first subject first before scheduling a class.
+            </div>
+          )}
+
           <SelectField
             label="Subject"
             value={form.subject_id}
@@ -830,6 +848,36 @@ useEffect(() => {
               className="bg-red-600 text-white hover:bg-red-700"
             >
               {isSaving ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </div>
+      </AlertDialog>
+
+      <AlertDialog
+        open={isNoSubjectsOpen}
+        title="No Subjects Yet"
+        onClose={() => setIsNoSubjectsOpen(false)}
+      >
+        <div className="space-y-5">
+          <p className="text-[#6e7c69]">
+            Add your first subject before scheduling a class.
+          </p>
+
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setIsNoSubjectsOpen(false)}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              onClick={() => {
+                setIsNoSubjectsOpen(false);
+                navigate("/subjects");
+              }}
+            >
+              Go to Subjects
             </Button>
           </div>
         </div>
