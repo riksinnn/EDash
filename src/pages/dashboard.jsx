@@ -36,6 +36,7 @@ function StatCard({ value, label, color }) {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [showWelcome, setShowWelcome] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [schedule, setSchedule] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -54,6 +55,21 @@ export default function Dashboard() {
     return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    const justLoggedIn = sessionStorage.getItem("justLoggedIn");
+
+    if (justLoggedIn === "true") {
+      setShowWelcome(true);
+
+      const timer = setTimeout(() => {
+        setShowWelcome(false);
+        sessionStorage.removeItem("justLoggedIn");
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
+  
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
@@ -208,7 +224,21 @@ export default function Dashboard() {
   }, [currentTime, schedule, tasks]);
 
   return (
+    <>
+        {showWelcome && (
+      <div className="fixed top-5 right-5 z-50 rounded-2xl bg-[var(--accent)] px-5 py-4 text-white shadow-xl transition-all duration-300">
+        <p className="text-lg font-semibold">
+          Welcome {user?.displayName ? `, ${user.displayName}` : ""}!
+        </p>
+
+        <p className="text-sm opacity-90">
+          Ready to plan your day?
+        </p>
+      </div>
+    )}
+    
     <div className="space-y-7">
+
       <section className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
         <div>
           <h2 className="font-serif text-5xl font-semibold tracking-tight text-[var(--text-primary)]">
@@ -352,7 +382,7 @@ export default function Dashboard() {
                 </Card>
               );
             })}
-            </div>
+            </div> 
           ) : (
             <Card className="flex min-h-[190px] flex-col items-center justify-center border-dashed border-[var(--app-border)] p-6 text-center shadow-none">
               <ListChecks size={46} className="text-[var(--text-muted)]" />
@@ -364,5 +394,6 @@ export default function Dashboard() {
         </div>
       </section>
     </div>
+    </>
   );
 }

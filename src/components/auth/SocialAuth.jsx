@@ -10,6 +10,9 @@ export default function SocialAuth() {
     setIsLoading(true);
 
     try {
+      
+      sessionStorage.setItem("justLoggedIn", "true");
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {

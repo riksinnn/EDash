@@ -1,12 +1,45 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, CalendarDays, CheckSquare, Clock3 } from "lucide-react";
 import { Button } from "../components/ui/button";
+import { useAuth } from "../context/AuthContext";
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [showWelcome, setShowWelcome] = useState(false);
+  useEffect(() => {
+    const justLoggedIn = sessionStorage.getItem("justLoggedIn");
+
+    if (user && justLoggedIn === "true") {
+      setShowWelcome(true);
+
+      // ✅ remove flag so refresh won't show popup
+      sessionStorage.removeItem("justLoggedIn");
+
+      const timer = setTimeout(() => {
+        setShowWelcome(false);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-[image:var(--landing-gradient)] px-6 py-10 text-[var(--text-primary)]">
+     
+      {showWelcome && (
+        <div className="fixed top-5 right-5 z-50 rounded-2xl bg-[var(--accent)] px-5 py-4 text-white shadow-xl transition-all duration-300">
+          <p className="text-lg font-semibold">
+            Welcome back{user?.displayName ? `, ${user.displayName}` : ""}!
+          </p>
+
+          <p className="text-sm opacity-90">
+            Ready to plan your day?
+          </p>
+        </div>
+      )}
+
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl flex-col justify-between">
         <header className="flex items-center justify-between">
           <h1 className="font-serif text-4xl font-semibold text-[var(--accent)]">Edash</h1>
