@@ -78,7 +78,7 @@ export default function Dashboard() {
 
       const { data: scheduleData, error: scheduleError } = await supabase
         .from("schedule")
-        .select("*, subjects(name, color)")
+        .select("*, subjects(id, name, color)")
         .eq("user_id", user.id)
         .eq("day_of_week", today);
 
@@ -90,7 +90,7 @@ export default function Dashboard() {
 
       const { data: tasksData, error: tasksError } = await supabase
         .from("tasks")
-        .select("*, subjects(name, color)")
+        .select("*, subjects(id, name, color)")
         .eq("user_id", user.id)
         .not("status", "eq", "done");
 
@@ -105,34 +105,47 @@ export default function Dashboard() {
   }, [user]);
 
   useEffect(() => {
-    const sortedTasks = [...tasks].sort((a, b) => {
-      const statusOrder = { urgent: 0, ongoing: 1 };
-      const aStatus = a.status?.toLowerCase();
-      const bStatus = b.status?.toLowerCase();
+  const sortedTasks = [...tasks].sort((a, b) => {
+    const statusOrder = {
+      urgent: 0,
+      ongoing: 1,
+    };
 
-      // Prioritize tasks for the "Happening Now" subject
-      if (happeningNow) {
-        const currentSubjectId = happeningNow.subjects.id;
-        const aIsCurrent = a.subjects?.id === currentSubjectId;
-        const bIsCurrent = b.subjects?.id === currentSubjectId;
-        if (aIsCurrent && !bIsCurrent) return -1;
-        if (!aIsCurrent && bIsCurrent) return 1;
-      }
+    const aStatus = a.status?.toLowerCase();
+    const bStatus = b.status?.toLowerCase();
 
-      // Then, sort by status
-      if (statusOrder[aStatus] !== statusOrder[bStatus]) {
-        return (statusOrder[aStatus] ?? 2) - (statusOrder[bStatus] ?? 2);
-      }
+    // PRIORITIZE CURRENT SUBJECT FIRST
+    if (happeningNow?.subjects?.id) {
+      const currentSubjectId = happeningNow.subjects.id;
 
-      // Finally, sort by deadline (earliest first)
-      const aDeadline = a.deadline ? new Date(a.deadline) : null;
-      const bDeadline = b.deadline ? new Date(b.deadline) : null;
-      if (aDeadline && bDeadline) return aDeadline - bDeadline;
-      if (aDeadline) return -1;
-      if (bDeadline) return 1;
+      const aIsCurrent = a.subjects?.id === currentSubjectId;
+      const bIsCurrent = b.subjects?.id === currentSubjectId;
 
-      return 0;
-    });
+      if (aIsCurrent && !bIsCurrent) return -1;
+      if (!aIsCurrent && bIsCurrent) return 1;
+    }
+
+    // THEN SORT BY STATUS
+    const aPriority = statusOrder[aStatus] ?? 99;
+    const bPriority = statusOrder[bStatus] ?? 99;
+
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority;
+    }
+
+    // THEN SORT BY DEADLINE
+    const aDeadline = a.deadline ? new Date(a.deadline) : null;
+    const bDeadline = b.deadline ? new Date(b.deadline) : null;
+
+    if (aDeadline && bDeadline) {
+      return aDeadline - bDeadline;
+    }
+
+    if (aDeadline) return -1;
+    if (bDeadline) return 1;
+
+    return 0;
+  });
 
     setPriorityTasks(sortedTasks);
   }, [tasks, happeningNow]);
