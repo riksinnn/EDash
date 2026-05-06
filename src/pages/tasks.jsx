@@ -355,7 +355,24 @@ export default function Tasks() {
           </>
         ) : (
           <div className="mt-6 w-full space-y-3 text-left">
-            {visibleTasks.map((task) => (
+            {visibleTasks.map((task) => {
+
+              const statusStyles = {
+                Urgent: {
+                  text: "text-[#b4545c]",
+                  border: "#d28a92",
+                },
+                Ongoing: {
+                  text: "text-[#9c7446]",
+                  border: "#cfb08a",
+                },
+                Done: {
+                  text: "text-[#5d7d63]",
+                  border: "#9eb5a2",
+                },
+              };
+
+              return (
               <div
                 key={task.id}
                 className={cn(
@@ -364,15 +381,9 @@ export default function Tasks() {
                 )}
                 style={{
                   borderLeft: `5px solid ${task.color || "transparent"}`,
-                  backgroundColor:
-                    task.status === "Urgent"
-                      ? "#fee2e2" // light red
-                      : task.status === "Ongoing"
-                      ? "#f5cda2" // light orange
-                      : task.status === "Done"
-                      ? "#dcfce7" // light green
-                      : "#fbf9f4", // default
+                  backgroundColor: "#fbf9f4",
                 }}
+                
               >
                 <div className="flex items-center gap-4">
                   <Checkbox
@@ -389,6 +400,26 @@ export default function Tasks() {
                     >
                       {task.title}
                     </p>
+
+                  <div className="mt-2">
+                    <span
+                      className={cn(
+                        "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]",
+
+                        task.status === "Urgent" &&
+                          "bg-[#fbe4e6] text-[#b4545c]",
+
+                        task.status === "Ongoing" &&
+                          "bg-[#f4e6cf] text-[#9c7446]",
+
+                        task.status === "Done" &&
+                          "bg-[#dfeadf] text-[#5d7d63]"
+                      )}
+                    >
+                      {task.status}
+                    </span>
+                  </div>
+
                     <p className="mt-1 text-sm uppercase tracking-[0.12em] text-[#7a8a77]">
                       {task.subject}
                     </p>
@@ -414,7 +445,8 @@ export default function Tasks() {
                   </Button>
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
         )}
       </Card>
