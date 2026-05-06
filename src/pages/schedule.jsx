@@ -628,7 +628,7 @@ useEffect(() => {
         title="Schedule Class"
         onClose={() => setIsDialogOpen(false)}
       >
-        <div className="space-y-6">
+        <div className="max-h-[80vh] space-y-6 overflow-y-auto pr-1">
           <SelectField
             label="Subject"
             value={form.subject_id}
@@ -712,7 +712,7 @@ useEffect(() => {
         title="Edit Class"
         onClose={() => setIsEditDialogOpen(false)}
       >
-        <div className="space-y-6">
+        <div className="max-h-[80vh] space-y-6 overflow-y-auto pr-1">
           <SelectField
             label="Subject"
             value={String(form.subject_id || "")}
@@ -799,7 +799,7 @@ useEffect(() => {
         title="Delete Class"
         onClose={() => setIsDeleteDialogOpen(false)}
       >
-        <div className="space-y-4">
+        <div className="max-h-[80vh] space-y-4 overflow-y-auto pr-1">
           <p className="text-lg text-[#6e7c69]">
             {deleteAllDays
               ? "This will delete all scheduled days for this class."

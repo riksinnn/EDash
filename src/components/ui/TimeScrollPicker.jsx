@@ -55,7 +55,7 @@ const handleScroll = (e) => {
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className="relative h-[160px] w-20 overflow-y-scroll border rounded-2xl bg-white shadow-inner scrollbar-hide"      
+      className="relative h-[130px] w-16 sm:h-[160px] sm:w-20 overflow-y-scroll border rounded-2xl bg-white shadow-inner scrollbar-hide"      
       style={
       items.length <= 3
        ? {}
@@ -68,7 +68,7 @@ const handleScroll = (e) => {
       {/* Center highlight */}
       <div className="absolute top-1/2 left-0 right-0 h-10 -translate-y-1/2 rounded-md bg-gray-100 border border-gray-300 pointer-events-none z-0"></div>
 
-      <div className="py-16">
+      <div className="py-12 sm:py-16">
         {items.map((item, i) => (
       <div
         key={item}
