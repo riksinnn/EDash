@@ -365,10 +365,11 @@ export default function Dashboard() {
             <div
               className={cn(
                 "space-y-3",
-                priorityTasks.length > 3 && "max-h-[280px] overflow-y-auto pr-2"
+                priorityTasks.length > 3 &&
+    "max-h-[300px] overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-[#d6cfbf] scrollbar-track-transparent"
               )}
             >
-            {priorityTasks.slice(0, 3).map((task) => {
+            {priorityTasks.map((task) => {
               const statusColors = {
                 urgent: 'text-red-600',
                 ongoing: 'text-orange-500',
@@ -380,18 +381,60 @@ export default function Dashboard() {
               return (
                 <Card
                   key={task.id}
-                  className="p-5"
-                  style={{
-                    borderLeft: `5px solid ${task.subjects?.color || "transparent"}`,
-                  }}
-                >
-                  <p className="text-xl font-semibold text-[#354737]">{task.title}</p>
+                  className={cn(
+                    "group rounded-2xl border bg-[#fbf9f4] px-4 py-3 transition-all duration-200 hover:shadow-md",
 
-                  <p className={`mt-1 text-sm font-medium uppercase tracking-wider ${
-                    statusColors[status] || 'text-[#6e7c69]'
-                  }`}>
-                    {task.status} &bull; {task.subjects?.name || "No Subject"}
-                  </p>
+                    task.subjects?.id === happeningNow?.subjects?.id
+                      ? "border-[var(--accent)] shadow-sm"
+                      : "border-[#ebe4d8]"
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      {/* TASK TITLE */}
+                      <p className="text-xl font-semibold text-[#354737]">
+                        {task.title}
+                      </p>
+
+                      {/* STATUS BADGE */}
+                      <div>
+                        <span
+                          className={cn(
+                            "rounded-full px-2.5 py-0.5 text-[10px]",
+
+                            status === "urgent" &&
+                              "bg-[#fbe4e6] text-[#b4545c]",
+
+                            status === "ongoing" &&
+                              "bg-[#f4e6cf] text-[#9c7446]",
+
+                            status === "done" &&
+                              "bg-[#dfeadf] text-[#5d7d63]"
+                          )}
+                        >
+                          {task.status}
+                        </span>
+                      </div>
+
+                      {/* SUBJECT */}
+                      <p className="text-sm uppercase tracking-[0.12em] text-[#7a8a77]">
+                        {task.subjects?.name || "No Subject"}
+                      </p>
+                      {task.subjects?.id === happeningNow?.subjects?.id && (
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--accent-strong)]">
+                          Current Subject
+                        </p>
+                      )}
+                    </div>
+
+                    {/* SUBJECT COLOR DOT */}
+                    <div
+                      className="mt-1 h-3 w-3 rounded-full"
+                      style={{
+                        backgroundColor: task.subjects?.color || "#ccc",
+                      }}
+                    />
+                  </div>
                 </Card>
               );
             })}

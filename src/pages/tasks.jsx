@@ -376,7 +376,7 @@ export default function Tasks() {
               <div
                 key={task.id}
                 className={cn(
-                  "group flex items-center justify-between rounded-2xl border px-4 py-3 transition-colors",
+                  "group flex items-center justify-between rounded-2xl border border-[#ebe4d8] bg-[#fbf9f4] px-4 py-3 transition-all duration-200 hover:scale-[1.01] hover:shadow-md",
                   task.status === "Done" && "opacity-60"
                 )}
                 style={{
@@ -391,7 +391,7 @@ export default function Tasks() {
                     onCheckedChange={() => handleToggleTaskStatus(task)}
                     aria-label="Mark task as done"
                   />
-                  <div>
+                  <div className="space-y-2">
                     <p
                       className={cn(
                         "text-xl font-semibold text-[#354737]",
@@ -401,24 +401,24 @@ export default function Tasks() {
                       {task.title}
                     </p>
 
-                  <div className="mt-2">
-                    <span
-                      className={cn(
-                        "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]",
+                    <div className="mt-2">
+                      <span
+                        className={cn(
+                          "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]",
 
-                        task.status === "Urgent" &&
-                          "bg-[#fbe4e6] text-[#b4545c]",
+                          task.status === "Urgent" &&
+                            "bg-[#fbe4e6] text-[#b4545c]",
 
-                        task.status === "Ongoing" &&
-                          "bg-[#f4e6cf] text-[#9c7446]",
+                          task.status === "Ongoing" &&
+                            "bg-[#f4e6cf] text-[#9c7446]",
 
-                        task.status === "Done" &&
-                          "bg-[#dfeadf] text-[#5d7d63]"
-                      )}
-                    >
-                      {task.status}
-                    </span>
-                  </div>
+                          task.status === "Done" &&
+                            "bg-[#dfeadf] text-[#5d7d63]"
+                        )}
+                      >
+                        {task.status}
+                      </span>
+                    </div>
 
                     <p className="mt-1 text-sm uppercase tracking-[0.12em] text-[#7a8a77]">
                       {task.subject}
