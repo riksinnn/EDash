@@ -339,9 +339,12 @@ export default function Dashboard() {
       <section>
         <Link
           to="/subjects"
-          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gray-100 p-4 text-center text-lg font-medium text-gray-700 transition-colors hover:bg-gray-200"
+          className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-[#354637] px-5 py-4 text-center text-lg font-semibold text-[#f7f4ee] shadow-[0_8px_24px_rgba(53,70,55,0.22)] transition-all duration-200 hover:bg-[#415744] hover:shadow-[0_10px_28px_rgba(53,70,55,0.28)]"
         >
-          <BookMarked size={20} />
+          <BookMarked
+            size={20}
+            className="transition-transform duration-200 group-hover:scale-110"
+          />
           <span>Manage Subjects</span>
         </Link>
       </section>
