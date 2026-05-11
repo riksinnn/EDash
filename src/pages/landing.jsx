@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, CalendarDays, CheckSquare, Clock3 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../context/AuthContext";
-import logo from "../assets/logo.svg";
+import logo from "../assets/temp-logo.svg";
 
 export default function Landing() {
   const navigate = useNavigate();
