@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, CalendarDays, CheckSquare, Clock3 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../context/AuthContext";
+import logo from "../assets/logo.svg";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -42,10 +43,21 @@ export default function Landing() {
 
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl flex-col justify-between">
         <header className="flex items-center justify-between">
-          <h1 className="font-serif text-4xl font-semibold text-[var(--accent)]">Edash</h1>
-          <Button variant="ghost" onClick={() => navigate("/login")}>
-            Log In
-          </Button>
+          <img
+            src={logo}
+            alt="Edash Logo"
+            className="h-20 w-auto"
+          />
+
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" onClick={() => navigate("/login")}>
+              Log In
+            </Button>
+
+            <Button variant="ghost" onClick={() => navigate("/signup")}>
+              Sign Up
+            </Button>
+          </div>
         </header>
 
         <main className="grid items-center gap-14 py-12 lg:grid-cols-[1.1fr_0.9fr]">
@@ -105,7 +117,7 @@ export default function Landing() {
         </main>
 
         <footer className="border-t border-[var(--app-border)] pt-6 text-sm uppercase tracking-[0.2em] text-[var(--text-muted)]">
-          Installable PWA for students and educators
+          A mobile-friendly web companion for students and educators
         </footer>
       </div>
     </div>
