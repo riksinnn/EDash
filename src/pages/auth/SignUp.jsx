@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Check, X } from "lucide-react";
+import { ArrowLeft, Check, X } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import SocialAuth from "../../components/auth/SocialAuth";
 import { Button } from "../../components/ui/button";
@@ -179,6 +179,13 @@ function AuthShell({ eyebrow, title, subtitle, children, footer }) {
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-5xl items-center">
         <div className="grid w-full gap-10 lg:grid-cols-[0.95fr_1.05fr]">
           <section className="flex flex-col justify-center">
+            <Link
+              to="/"
+              className="mb-8 flex w-fit items-center gap-2 text-sm font-medium text-[var(--text-secondary)] transition hover:translate-x-[-2px] hover:text-[var(--text-primary)]"
+            >
+              <ArrowLeft size={16} />
+              <span>Back to Home</span>
+            </Link>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
               {eyebrow}
             </p>

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Eye, EyeOff, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, ShieldAlert } from "lucide-react";
 import SocialAuth from "../../components/auth/SocialAuth";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { useAuth } from "../../context/AuthContext";
+
 
 const rememberedEmailKey = "edash-remembered-email";
 const loginAttemptsKey = "edash-login-attempts";
@@ -94,6 +95,7 @@ export default function SignIn() {
   };
 
   return (
+
     <AuthShell
       eyebrow="Welcome back"
       title="Pick up where you left off."
@@ -237,6 +239,13 @@ function AuthShell({ eyebrow, title, subtitle, children, footer }) {
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-5xl items-center">
         <div className="grid w-full gap-10 lg:grid-cols-[0.95fr_1.05fr]">
           <section className="flex flex-col justify-center">
+            <Link
+              to="/"
+              className="mb-8 flex w-fit items-center gap-2 text-sm font-medium text-[var(--text-secondary)] transition hover:translate-x-[-2px] hover:text-[var(--text-primary)]"
+            >
+              <ArrowLeft size={16} />
+              <span>Back to Home</span>
+            </Link>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
               {eyebrow}
             </p>
