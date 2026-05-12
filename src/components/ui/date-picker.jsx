@@ -33,7 +33,7 @@ export function DatePicker({ value, onChange, ...props }) {
           {value ? format(value, "PPP") : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto rounded-2xl border-[#ddd4c3] bg-[#fbf9f4] p-0">
+      <PopoverContent className="w-auto rounded-2xl border border-[var(--app-border)] bg-[var(--app-panel)] p-0 text-[var(--text-primary)] shadow-[var(--shadow-card)]">
         <DayPicker
           mode="single"
           selected={value}
@@ -44,20 +44,20 @@ export function DatePicker({ value, onChange, ...props }) {
             months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 p-4",
             month: "space-y-4",
             caption: "flex justify-center pt-1 relative items-center",
-            caption_label: "text-lg font-medium text-[#354737]",
+            caption_label: "text-lg font-medium text-[var(--text-primary)]",
             nav: "space-x-1 flex items-center",
             nav_button:
               "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
             table: "w-full border-collapse space-y-1",
             head_row: "flex",
-            head_cell: "text-gray-500 rounded-md w-9 font-normal text-[0.8rem]",
+            head_cell: "text-[var(--text-muted)] rounded-md w-9 font-normal text-[0.8rem]",
             row: "flex w-full mt-2",
-            cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-gray-100 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 text-[#354737]",
+            cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-[var(--accent-soft)] first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 text-[var(--text-primary)] hover:bg-[var(--accent-soft)] rounded-full transition-colors",
             day_selected:
-              "bg-[#89a171] text-white hover:bg-[#89a171] focus:bg-[#89a171] rounded-full",
-            day_today: "bg-[#f2eee6] text-[#354737] rounded-full",
-            day_disabled: "text-gray-400 opacity-50",
+              "bg-[var(--accent)] text-[var(--app-panel)] hover:bg-[var(--accent-strong)] focus:bg-[var(--accent-strong)] rounded-full",
+            day_today: "bg-[var(--accent-soft)] text-[var(--text-primary)] rounded-full",
+            day_disabled: "text-[var(--text-muted)] opacity-40",
             day_hidden: "invisible",
           }}
         />
