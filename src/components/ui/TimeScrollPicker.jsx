@@ -55,7 +55,7 @@ const handleScroll = (e) => {
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className="relative h-[130px] w-16 sm:h-[160px] sm:w-20 overflow-y-scroll border rounded-2xl bg-white shadow-inner scrollbar-hide"      
+      className="relative h-[130px] w-16 sm:h-[160px] sm:w-20 overflow-y-scroll rounded-2xl border border-[var(--app-border)] bg-[var(--surface-elevated)] shadow-[inset_0_1px_8px_rgba(0,0,0,0.12)] scrollbar-hide backdrop-blur-sm snap-y snap-mandatory"      
       style={
       items.length <= 3
        ? {}
@@ -66,7 +66,7 @@ const handleScroll = (e) => {
         }}
     >
       {/* Center highlight */}
-      <div className="absolute top-1/2 left-0 right-0 h-10 -translate-y-1/2 rounded-md bg-gray-100 border border-gray-300 pointer-events-none z-0"></div>
+      <div className="pointer-events-none absolute left-2 right-2 top-1/2 z-10 h-10 -translate-y-1/2 rounded-xl border border-[var(--app-border-strong)] bg-[color:color-mix(in_srgb,var(--surface-elevated)_92%,white_8%)] shadow-[0_0_0_1px_rgba(255,255,255,0.03),0_4px_12px_rgba(0,0,0,0.12)] backdrop-blur-sm"></div>
 
       <div className="py-12 sm:py-16">
         {items.map((item, i) => (
@@ -86,10 +86,10 @@ const handleScroll = (e) => {
 
           onChange(item);
         }}
-        className={`h-10 flex items-center justify-center cursor-pointer transition ${
+        className={`relative z-20 h-10 snap-center flex items-center justify-center tabular-nums cursor-pointer transition ${
           item === value
-            ? "text-black font-semibold text-lg scale-110"
-            : "text-gray-600 hover:text-black"
+            ? "text-[var(--text-primary)] font-semibold text-lg"
+            : "opacity-45 text-[var(--text-secondary)] hover:opacity-80"
         }`}
       >
         {item}

@@ -30,31 +30,62 @@
   --landing-gradient:
     radial-gradient(circle at top, rgba(201, 193, 171, 0.34), transparent 34%),
     linear-gradient(180deg, #f7f4ee 0%, #f2efe7 100%);
+
+  --urgent-bg: #fbe4e6;
+  --urgent-text: #b4545c;
+
+  --ongoing-bg: #f4e6cf;
+  --ongoing-text: #9c7446;
+
+  --done-bg: #dfeadf;
+  --done-text: #5d7d63;
 }
 
 :root[data-theme="dark"] {
-  --app-bg: #172019;
-  --app-panel: #202a21;
-  --app-panel-muted: #1c251d;
-  --app-panel-soft: #263126;
-  --app-border: #334030;
-  --app-border-strong: #2d392b;
-  --text-primary: #edf0e7;
-  --text-secondary: #b4bfaa;
-  --text-muted: #95a18f;
-  --accent: #9bb981;
-  --accent-strong: #89a171;
-  --accent-soft: #2b3829;
-  --nav-bg: rgba(23, 32, 25, 0.94);
-  --overlay: rgba(6, 8, 6, 0.8);
-  --shadow-soft: 0 16px 40px rgba(0, 0, 0, 0.25);
-  --shadow-card: 0 24px 60px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
+
+  --app-bg: #141816;
+  --app-panel: #1b211d;
+  --app-panel-muted: #171c18;
+  --app-panel-soft: #222924;
+
+  --surface-elevated: #283029;
+
+  --app-border: #313a33;
+  --app-border-strong: #3a443c;
+
+  --text-primary: #f3f4f1;
+  --text-secondary: #b8c1b4;
+  --text-muted: #8f998b;
+
+  --accent: #8faa7a;
+  --accent-strong: #a4c28f;
+  --accent-soft: #2b342d;
+
+  --hover-soft: rgba(255, 255, 255, 0.04);
+
+  --nav-bg: rgba(20, 24, 22, 0.92);
+  --overlay: rgba(5, 6, 5, 0.78);
+
+  --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.22);
+  --shadow-card: 0 20px 48px rgba(0, 0, 0, 0.26);
+
   --shell-gradient:
-    radial-gradient(circle at top, rgba(93, 113, 82, 0.18), transparent 38%),
-    linear-gradient(180deg, #1b241c 0%, #151c16 100%);
+    radial-gradient(circle at top, rgba(143, 170, 122, 0.12), transparent 38%),
+    linear-gradient(180deg, #181d19 0%, #131814 100%);
+
   --landing-gradient:
-    radial-gradient(circle at top, rgba(93, 113, 82, 0.2), transparent 34%),
-    linear-gradient(180deg, #1a231b 0%, #151c16 100%);
+    radial-gradient(circle at top, rgba(143, 170, 122, 0.14), transparent 34%),
+    linear-gradient(180deg, #171c18 0%, #121612 100%);
+    
+  --urgent-bg: #44282d;
+  --urgent-text: #ffb4bc;
+
+  --ongoing-bg: #453726;
+  --ongoing-text: #f0c48b;
+
+  --done-bg: #2f4132;
+  --done-text: #b8ddb9;
 }
 
 * {
@@ -74,6 +105,8 @@ body {
   color: var(--text-primary);
   transition: background-color 180ms ease, color 180ms ease;
 }
+
+
 
 #root {
   min-height: 100vh;

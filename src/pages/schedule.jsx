@@ -552,9 +552,9 @@ useEffect(() => {
                 onClick={() => setSelectedDay(day)}
                 className={[
                   "flex h-18 min-w-16 flex-col items-center justify-center rounded-[20px] border px-4 py-3 text-xl font-medium transition-colors",
-                  isActive
-                    ? "border-[#1f2a1c] bg-[#1f2a1c] text-[#f7f4ee]"
-                    : "border-[#ddd4c3] bg-[#f8f5ef] text-[#4e5e4c]",
+                isActive
+                  ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--app-panel)]"
+                  : "border-[var(--app-border)] bg-[var(--app-panel)] text-[var(--text-secondary)]",
                 ].join(" ")}
               >
                 <span>{day}</span>
@@ -594,13 +594,13 @@ useEffect(() => {
       </section>
 
       <section className="space-y-4">
-        <h2 className="font-serif text-5xl font-semibold text-[#283728]">
+        <h2 className="font-serif text-5xl font-semibold text-[var(--text-primary)]">
           {selectedDay.charAt(0) + selectedDay.slice(1).toLowerCase()}&apos;s Classes
         </h2>
 
-        <Card className="min-h-[260px] border-dashed border-[#e3dbcc] bg-[#f7f4ee]/70 p-7 shadow-none">
+        <Card className="min-h-[260px] border-dashed border-[var(--app-border)] bg-[color:color-mix(in_srgb,var(--app-panel)_92%,transparent)] p-7 shadow-none">
           {dayEntries.length === 0 ? (
-            <div className="flex min-h-[200px] items-center justify-center text-center text-2xl text-[#6e7c69]">
+            <div className="flex min-h-[200px] items-center justify-center text-center text-2xl text-[var(--text-secondary)]">
               Nothing scheduled for this day yet.
             </div>
           ) : (
@@ -614,17 +614,17 @@ useEffect(() => {
                   }}
                 >
                   <div>
-                    <p className="text-2xl font-semibold text-[#354737]">{entry.subject}</p>
-                    <p className="mt-2 text-lg text-[#6e7c69]">
+                    <p className="text-2xl font-semibold text-[var(--text-primary)]">{entry.subject}</p>
+                    <p className="mt-2 text-lg text-[var(--text-muted)]">
                       {formatTime(entry.startTime)} - {formatTime(entry.endTime)}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100">
                     <Button variant="ghost" size="icon" onClick={() => openEditDialog(entry)}>
-                      <Edit size={20} className="text-gray-500" />
+                      <Edit size={20} className="text-[var(--text-muted)]" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(entry)}>
-                      <Trash2 size={20} className="text-red-500" />
+                      <Trash2 size={20} className="text-[var(--text-muted)]" />
                     </Button>
                   </div>
                 </Card>
@@ -642,7 +642,7 @@ useEffect(() => {
         <div className="max-h-[80vh] space-y-6 overflow-y-auto pr-1">
 
           {subjects.length === 0 && (
-            <div className="rounded-xl border border-dashed border-[#d8cfbf] bg-[#f8f5ef] p-4 text-sm text-[#6e7c69]">
+            <div cclassName="rounded-xl border border-dashed border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 text-sm text-[var(--text-secondary)]">
               No subjects yet. Add your first subject first before scheduling a class.
             </div>
           )}
@@ -663,8 +663,8 @@ useEffect(() => {
           </SelectField>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Days</label>
-            <div className="grid grid-cols-4 gap-2 rounded-lg bg-gray-100 p-2 sm:grid-cols-7">
+            <label className="text-sm font-medium text-[var(--text-secondary)]">Days</label>
+            <div className="grid grid-cols-4 gap-2 rounded-lg bg-[var(--app-panel-soft)] p-2 sm:grid-cols-7">
               {days.map((day) => {
                 const isSelected = form.days?.includes(day);
                 return (
@@ -681,9 +681,9 @@ useEffect(() => {
                     }}
                     className={cn(
                       "rounded-md px-3 py-2 text-center text-sm font-medium transition-colors",
-                      isSelected
-                        ? "bg-blue-500 text-white shadow-sm"
-                        : "bg-white text-gray-600 hover:bg-gray-50",
+isSelected
+  ? "bg-[var(--text-primary)] text-[var(--app-panel)] shadow-sm"
+  : "bg-[var(--app-panel)] text-[var(--text-secondary)] hover:bg-[var(--hover-soft)]",
                     )}
                   >
                     {day}
@@ -747,8 +747,8 @@ useEffect(() => {
           </SelectField>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Days</label>
-            <div className="grid grid-cols-4 gap-2 rounded-lg bg-gray-100 p-2 sm:grid-cols-7">
+            <label className="text-sm font-medium text-[var(--text-secondary)]">Days</label>
+            <div className="grid grid-cols-4 gap-2 rounded-lg bg-[var(--app-panel-soft)] p-2 sm:grid-cols-7">
               {days.map((day) => {
                 const isSelected = form.days?.includes(day);
 
@@ -768,8 +768,8 @@ useEffect(() => {
                     className={cn(
                       "rounded-md px-3 py-2 text-center text-sm font-medium transition-colors",
                       isSelected
-                        ? "bg-blue-500 text-white shadow-sm"
-                        : "bg-white text-gray-600 hover:bg-gray-50"
+                        ? "bg-[var(--text-primary)] text-[var(--app-panel)] shadow-sm"
+                        : "bg-[var(--app-panel)] text-[var(--text-secondary)] hover:bg-[var(--hover-soft)]"
                     )}
                   >
                     {day}
@@ -818,7 +818,7 @@ useEffect(() => {
         onClose={() => setIsDeleteDialogOpen(false)}
       >
         <div className="max-h-[80vh] space-y-4 overflow-y-auto pr-1">
-          <p className="text-lg text-[#6e7c69]">
+          <p className="text-lg text-[var(--text-secondary)]">
             {deleteAllDays
               ? "This will delete all scheduled days for this class."
               : "This will delete only this day's schedule."}
@@ -830,7 +830,7 @@ useEffect(() => {
               checked={deleteAllDays}
               onChange={(e) => setDeleteAllDays(e.target.checked)}
             />
-            <label className="text-sm text-gray-600">
+            <label className="text-sm text-[var(--text-secondary)]">
               Delete all days for this class
             </label>
           </div>
@@ -859,7 +859,7 @@ useEffect(() => {
         onClose={() => setIsNoSubjectsOpen(false)}
       >
         <div className="space-y-5">
-          <p className="text-[#6e7c69]">
+          <p className="text-[var(--text-secondary)]">
             Add your first subject before scheduling a class.
           </p>
 

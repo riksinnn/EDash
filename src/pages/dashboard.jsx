@@ -385,17 +385,17 @@ export default function Dashboard() {
                 <Card
                   key={task.id}
                   className={cn(
-                    "group rounded-2xl border bg-[#fbf9f4] px-4 py-3 transition-all duration-200 hover:shadow-md",
+                    "group rounded-2xl border bg-[var(--app-panel)] px-4 py-3 transition-all duration-200 hover:shadow-md",
 
                     task.subjects?.id === happeningNow?.subjects?.id
                       ? "border-[var(--accent)] shadow-sm"
-                      : "border-[#ebe4d8]"
+                      : "border-[var(--app-border)]"
                   )}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-2">
                       {/* TASK TITLE */}
-                      <p className="text-xl font-semibold text-[#354737]">
+                      <p className="text-xl font-semibold text-[var(--text-primary)]">
                         {task.title}
                       </p>
 
@@ -405,14 +405,14 @@ export default function Dashboard() {
                           className={cn(
                             "rounded-full px-2.5 py-0.5 text-[10px]",
 
-                            status === "urgent" &&
-                              "bg-[#fbe4e6] text-[#b4545c]",
+                           status === "urgent" &&
+                              "bg-[var(--urgent-bg)] text-[var(--urgent-text)]",
 
                             status === "ongoing" &&
-                              "bg-[#f4e6cf] text-[#9c7446]",
+                              "bg-[var(--ongoing-bg)] text-[var(--ongoing-text)]",
 
                             status === "done" &&
-                              "bg-[#dfeadf] text-[#5d7d63]"
+                              "bg-[var(--done-bg)] text-[var(--done-text)]"
                           )}
                         >
                           {task.status}
@@ -420,7 +420,7 @@ export default function Dashboard() {
                       </div>
 
                       {/* SUBJECT */}
-                      <p className="text-sm uppercase tracking-[0.12em] text-[#7a8a77]">
+                      <p className="text-sm uppercase tracking-[0.12em] text-[var(--text-muted)]">
                         {task.subjects?.name || "No Subject"}
                       </p>
                       {task.subjects?.id === happeningNow?.subjects?.id && (
