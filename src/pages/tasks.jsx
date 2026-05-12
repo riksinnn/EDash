@@ -358,7 +358,7 @@ export default function Tasks() {
         </Button>
       </section>
 
-      <Card className="flex min-h-[270px] flex-col items-center justify-center border-dashed border-[#e3dbcc] bg-[#f7f4ee]/70 p-8 text-center shadow-none">
+      <Card className="min-h-[260px] border-dashed border-[var(--app-border)] bg-[color:color-mix(in_srgb,var(--app-panel)_92%,transparent)] p-7 shadow-none flex min-h-[270px] flex-col items-center justify-center">
         {visibleTasks.length === 0 ? (
           <>
             <ListChecks size={54} className="text-[#afb4a8]" />
