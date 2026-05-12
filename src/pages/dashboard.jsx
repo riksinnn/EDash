@@ -369,7 +369,7 @@ export default function Dashboard() {
               className={cn(
                 "space-y-3",
                 priorityTasks.length > 3 &&
-    "max-h-[300px] overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-[#d6cfbf] scrollbar-track-transparent"
+                "max-h-[300px] overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-[#d6cfbf] scrollbar-track-transparent"
               )}
             >
             {priorityTasks.map((task) => {
@@ -406,13 +406,13 @@ export default function Dashboard() {
                             "rounded-full px-2.5 py-0.5 text-[10px]",
 
                            status === "urgent" &&
-                              "bg-[var(--urgent-bg)] text-[var(--urgent-text)]",
+                              "bg-[var(--urgent-bg)] text-[var(--urgent-text)] uppercase",
 
                             status === "ongoing" &&
-                              "bg-[var(--ongoing-bg)] text-[var(--ongoing-text)]",
+                              "bg-[var(--ongoing-bg)] text-[var(--ongoing-text)] uppercase",
 
                             status === "done" &&
-                              "bg-[var(--done-bg)] text-[var(--done-text)]"
+                              "bg-[var(--done-bg)] text-[var(--done-text)] uppercase"
                           )}
                         >
                           {task.status}

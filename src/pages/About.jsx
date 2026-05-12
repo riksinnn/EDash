@@ -30,18 +30,18 @@ export default function About() {
   ];
 
   return (
-    <div className="space-y-6">
-      <h2 className="font-serif text-5xl font-semibold text-[#283728]">
+    <div className="space-y-6 ">
+      <h2 className="font-serif text-5xl font-semibold text-[var(--text-primary)]">
         About & Terms
       </h2>
-      <Card className="border-dashed border-[#e3dbcc] bg-[#f7f4ee]/70 p-7 shadow-none">
+      <Card className="border-dashed border-[var(--app-border)] bg-[color:color-mix(in_srgb,var(--app-panel)_92%,transparent)] p-7 shadow-none">
         <div className="space-y-6">
           {terms.map((term) => (
             <div key={term.title}>
-              <h3 className="text-2xl font-semibold text-[#354737]">
+              <h3 className="text-2xl font-semibold text-[var(--text-secondary)]">
                 {term.title}
               </h3>
-              <p className="mt-2 text-lg text-[#6e7c69]">{term.content}</p>
+              <p className="mt-2 text-lg text-[var(--text-muted)]">{term.content}</p>
             </div>
           ))}
         </div>

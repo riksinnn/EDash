@@ -14,7 +14,7 @@ export function SelectField({ label, value, onChange, children, className }) {
         <select
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="w-full appearance-none rounded-2xl border border-[#ddd4c3] bg-[#f8f5ef] px-4 py-3 pr-11 text-xl text-[#425642] shadow-[0_5px_18px_rgba(75,84,63,0.08)] outline-none focus:border-[#89a171]"
+          className="w-full appearance-none rounded-2xl border border-[var(--app-border)] bg-[var(--app-panel)]  px-4 py-3 pr-11 text-xl text-[#425642] shadow-[0_5px_18px_rgba(75,84,63,0.08)] outline-none focus:border-[#89a171]"
         >
           {children}
         </select>

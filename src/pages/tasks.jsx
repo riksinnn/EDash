@@ -330,7 +330,7 @@ export default function Tasks() {
   return (
     <div className="space-y-6">
       <section className="flex flex-wrap items-center justify-between gap-4">
-        <div className="inline-flex rounded-[22px] border border-[#ddd4c3] bg-[#f8f5ef] p-1 shadow-[0_12px_28px_rgba(127,117,96,0.1)]">
+        <div className="inline-flex rounded-[22px] border-[var(--app-border)] bg-[var(--app-panel-soft)] p-1 shadow-[0_12px_28px_rgba(127,117,96,0.1)]">
           {filters.map((filter) => (
             <button
               key={filter}
@@ -387,12 +387,12 @@ export default function Tasks() {
               <div
                 key={task.id}
                 className={cn(
-                  "group flex items-center justify-between rounded-2xl border border-[#ebe4d8] bg-[#fbf9f4] px-4 py-3 transition-all duration-200 hover:scale-[1.01] hover:shadow-md",
+                  "group flex items-center justify-between rounded-2xl border border-[var(--app-border)] bg-[var(--app-panel)] px-4 py-3 transition-all duration-200 hover:scale-[1.01] hover:shadow-md",
                   task.status === "Done" && "opacity-60"
                 )}
                 style={{
                   borderLeft: `5px solid ${task.color || "transparent"}`,
-                  backgroundColor: "#fbf9f4",
+                  backgroundColor: "var(--app-panel)",
                 }}
                 
               >
@@ -405,7 +405,7 @@ export default function Tasks() {
                   <div className="space-y-2">
                     <p
                       className={cn(
-                        "text-xl font-semibold text-[#354737]",
+                        "text-xl font-semibold text-[var(--text-primary)]",
                         task.status === "Done" && "line-through"
                       )}
                     >
@@ -418,24 +418,24 @@ export default function Tasks() {
                           "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]",
 
                           task.status === "Urgent" &&
-                            "bg-[#fbe4e6] text-[#b4545c]",
+                            "bg-[var(--urgent-bg)] text-[var(--urgent-text)] uppercase",
 
                           task.status === "Ongoing" &&
-                            "bg-[#f4e6cf] text-[#9c7446]",
+                            "bg-[var(--ongoing-bg)] text-[var(--ongoing-text)] uppercase",
 
                           task.status === "Done" &&
-                            "bg-[#dfeadf] text-[#5d7d63]"
+                            "bg-[var(--done-bg)] text-[var(--done-text)] uppercase"
                         )}
                       >
                         {task.status}
                       </span>
                     </div>
 
-                    <p className="mt-1 text-sm uppercase tracking-[0.12em] text-[#7a8a77]">
+                    <p className="mt-1 text-sm uppercase tracking-[0.12em] text-[var(--text-muted)]">
                       {task.subject}
                     </p>
                     {task.deadline && (
-                      <p className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                      <p className="mt-2 flex items-center gap-2 text-sm text-[var(--text-muted)]">
                         <Calendar size={14} />
                         Due {format(task.deadline, "MMM d, yyyy")}
                       </p>
@@ -449,10 +449,10 @@ export default function Tasks() {
                   )}
                 >
                   <Button variant="ghost" size="icon" onClick={() => openEditDialog(task)}>
-                    <Edit size={18} className="text-gray-600" />
+                    <Edit size={18} className="text-[var(--text-muted)]" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)}>
-                    <Trash2 size={18} className="text-red-500" />
+                    <Trash2 size={18} className="text-[var(--text-muted)]" />
                   </Button>
                 </div>
               </div>
@@ -469,7 +469,7 @@ export default function Tasks() {
       >
         <div className="space-y-6">
           <div>
-            <label className="mb-2 block text-xl font-medium text-[#354737]">
+            <label className="mb-2 block text-xl font-medium text-[var(--text-secondary)]">
               Task Title
             </label>
             <Input
@@ -499,7 +499,7 @@ export default function Tasks() {
           </div>
 
           <div>
-            <label className="mb-2 block text-xl font-medium text-[#354737]">
+            <label className="mb-2 block text-xl font-medium text-[var(--text-secondary)]">
               Deadline (Optional)
             </label>
             <DatePicker

@@ -24,12 +24,12 @@ export function DatePicker({ value, onChange, ...props }) {
         <Button
           variant={"outline"}
           className={cn(
-            "h-[54px] w-full justify-start rounded-2xl border border-[#ddd4c3] bg-[#f8f5ef] px-4 py-3 text-left text-xl font-normal text-[#425642] shadow-[0_5px_18px_rgba(75,84,63,0.08)] focus:border-[#89a171]",
+            "h-[54px] w-full justify-start rounded-2xl border border-[var(--app-border)] bg-[var(--app-panel)] px-4 py-3 text-left text-xl font-normal text-[var(--text-primary)] shadow-[0_5px_18px_rgba(75,84,63,0.08)] focus:border-[var(--accent)]",
             !value && "text-muted-foreground"
           )}
           {...props}
         >
-          <CalendarIcon className="mr-2 h-4 w-4" />
+          <CalendarIcon className="mr-2 h-4 w-4 " />
           {value ? format(value, "PPP") : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
