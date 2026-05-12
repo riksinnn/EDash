@@ -190,9 +190,9 @@ export default function Subjects() {
   return (
     <div className="space-y-6">
       <section className="flex items-center justify-between gap-4">
-        <h2 className="font-serif text-5xl font-semibold text-[#283728]">
-          Your Subjects
-        </h2>
+       <h2 className="font-serif text-5xl font-semibold text-[var(--accent)]">
+         Your Subjects 
+       </h2>
         <Button
           variant="icon"
           className="h-12 w-12"
@@ -206,7 +206,7 @@ export default function Subjects() {
         </Button>
       </section>
 
-      <Card className="min-h-[240px] border-dashed border-[#e3dbcc] bg-[#f7f4ee]/70 p-7 shadow-none">
+      <Card className="min-h-[260px] border-dashed border-[#354637]/50 bg-[#354637] p-7 shadow-none">
         {loading ? (
           <div className="flex min-h-[180px] items-center justify-center">
             <p className="text-2xl text-[#6e7c69]">Loading subjects...</p>
