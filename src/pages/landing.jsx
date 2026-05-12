@@ -3,10 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, CalendarDays, CheckSquare, Clock3 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../context/AuthContext";
-import logo from "../assets/temp-logo.svg";
+import logoLight from "../assets/logo-light.svg";
+import logoDark from "../assets/logo-dark.svg";
 
 export default function Landing() {
   const navigate = useNavigate();
+  const isDark =
+  document.documentElement.getAttribute("data-theme") === "dark";
   const { user } = useAuth();
   const [showWelcome, setShowWelcome] = useState(false);
   useEffect(() => {
@@ -44,9 +47,9 @@ export default function Landing() {
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl flex-col justify-between">
         <header className="flex items-center justify-between">
           <img
-            src={logo}
+            src={isDark ? logoDark : logoLight}
             alt="Edash Logo"
-            className="h-20 w-auto"
+            className="h-30 w-auto"
           />
 
           <div className="flex items-center gap-3">
