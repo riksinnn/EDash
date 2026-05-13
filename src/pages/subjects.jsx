@@ -1,11 +1,7 @@
-import { useState, useEffect } from "react";
-import { BookOpen, Plus, Pencil, Trash2 } from "lucide-react";
-import { AlertDialog } from "../components/ui/alert-dialog";
-import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
-import { Input } from "../components/ui/input";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
+import SubjectsView from "../views/subjects/SubjectsView";
 
 export default function Subjects() {
   const { user } = useAuth();
@@ -22,6 +18,21 @@ export default function Subjects() {
     color: "#8cae8a",
   });
 
+  const loadSubjects = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from("subjects").select("*").order("name");
+      if (error) throw error;
+      if (data) setSubjects(data);
+    } catch (error) {
+      console.error("Error loading subjects:", error);
+      setMessage("Could not load subjects.");
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       loadSubjects();
@@ -34,19 +45,18 @@ export default function Subjects() {
           (payload) => {
             if (payload.eventType === "INSERT") {
               setSubjects((current) => {
-                // Prevent duplicates from race conditions
-                if (current.some((s) => s.id === payload.new.id)) {
+                if (current.some((subject) => subject.id === payload.new.id)) {
                   return current;
                 }
                 return [...current, payload.new].sort((a, b) => a.name.localeCompare(b.name));
               });
             } else if (payload.eventType === "UPDATE") {
               setSubjects((current) =>
-                current.map((s) => (s.id === payload.new.id ? payload.new : s))
+                current.map((subject) => (subject.id === payload.new.id ? payload.new : subject))
               );
             } else if (payload.eventType === "DELETE") {
               setSubjects((current) =>
-                current.filter((s) => s.id !== payload.old.id)
+                current.filter((subject) => subject.id !== payload.old.id)
               );
             }
           }
@@ -57,36 +67,14 @@ export default function Subjects() {
         supabase.removeChannel(channel);
       };
     }
-  }, [user]);
+  }, [user, loadSubjects]);
 
-  const loadSubjects = async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("subjects")
-        .select("*")
-        .order("name");
-
-      if (error) throw error;
-      if (data) setSubjects(data);
-    } catch (error) {
-      console.error("Error loading subjects:", error);
-      setMessage("Could not load subjects.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // CREATE - Add new subject
   const handleCreateSubject = async () => {
     if (!form.name.trim() || !user) return;
 
     const normalizedName = form.name.trim().toLowerCase();
-
     const subjectExists = subjects.some(
-      (subject) =>
-        subject.name.trim().toLowerCase() === normalizedName
+      (subject) => subject.name.trim().toLowerCase() === normalizedName
     );
 
     if (subjectExists) {
@@ -111,7 +99,6 @@ export default function Subjects() {
     setIsDialogOpen(false);
   };
 
-  // UPDATE - Open edit dialog with subject data
   const handleOpenEdit = (subject) => {
     setMessage("");
     setSelectedSubject(subject);
@@ -123,16 +110,13 @@ export default function Subjects() {
     setIsEditDialogOpen(true);
   };
 
-  // UPDATE - Save edited subject
   const handleUpdateSubject = async () => {
     if (!form.name.trim() || !selectedSubject) return;
 
     const normalizedName = form.name.trim().toLowerCase();
-
     const subjectExists = subjects.some(
       (subject) =>
-        subject.id !== selectedSubject.id &&
-        subject.name.trim().toLowerCase() === normalizedName
+        subject.id !== selectedSubject.id && subject.name.trim().toLowerCase() === normalizedName
     );
 
     if (subjectExists) {
@@ -160,252 +144,50 @@ export default function Subjects() {
     setIsEditDialogOpen(false);
   };
 
-  // DELETE - Open delete confirmation
   const handleOpenDelete = (subject) => {
     setSelectedSubject(subject);
     setIsDeleteDialogOpen(true);
   };
 
-  // DELETE - Confirm and delete subject
   const handleDeleteSubject = async () => {
     if (!selectedSubject) return;
 
-    const { error } = await supabase
-      .from("subjects")
-      .delete()
-      .eq("id", selectedSubject.id);
+    const { error } = await supabase.from("subjects").delete().eq("id", selectedSubject.id);
 
     if (error) {
       console.error(error);
       setMessage("We couldn't delete that subject.");
       return;
     }
-    setSubjects((current) =>
-      current.filter((s) => s.id !== selectedSubject.id)
-    );
+
+    setSubjects((current) => current.filter((subject) => subject.id !== selectedSubject.id));
     setSelectedSubject(null);
     setIsDeleteDialogOpen(false);
   };
 
   return (
-    <div className="space-y-6">
-      <section className="flex items-center justify-between gap-4">
-       <h2 className="font-serif text-5xl font-semibold text-[var(--accent)]">
-         Your Subjects 
-       </h2>
-        <Button
-          variant="icon"
-          className="h-12 w-12"
-          onClick={() => {
-            setMessage("");
-            setIsDialogOpen(true);
-          }}
-          aria-label="Add subject"
-        >
-          <Plus size={22} />
-        </Button>
-      </section>
-
-      <Card className="min-h-[260px] border-dashed border-[#354637]/50 bg-[#354637] p-7 shadow-none">
-        {loading ? (
-          <div className="flex min-h-[180px] items-center justify-center">
-            <p className="text-2xl text-[#6e7c69]">Loading subjects...</p>
-          </div>
-        ) : subjects.length === 0 ? (
-          <div className="flex min-h-[180px] flex-col items-center justify-center text-center">
-            <BookOpen size={48} className="text-[#aab1a3]" />
-            <p className="mt-4 text-2xl text-[#6e7c69]">
-              No subjects yet. Add one to start organizing classes.
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {subjects.map((subject) => (
-              <div
-                key={subject.id}
-                className="group relative rounded-[24px] border border-[#ddd4c3] bg-[#fbf9f4] p-5"
-              >
-                <div
-                  className="mb-4 h-3 w-16 rounded-full"
-                  style={{ backgroundColor: subject.color }}
-                />
-                <p className="text-2xl font-semibold text-[#354737]">{subject.name}</p>
-                <p className="mt-1 text-lg text-[#6e7c69]">
-                  {subject.room || "Room not set"}
-                </p>
-                {/* Action buttons - visible on hover */}
-                <div className="absolute right-4 top-4 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEdit(subject)}
-                    className="rounded-xl bg-[#e8f0e4] p-2 text-[#5a7a52] transition-colors hover:bg-[#d4e4ce]"
-                    aria-label={`Edit ${subject.name}`}
-                  >
-                    <Pencil size={18} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenDelete(subject)}
-                    className="rounded-xl bg-red-50 p-2 text-red-500 transition-colors hover:bg-red-100"
-                    aria-label={`Delete ${subject.name}`}
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      <AlertDialog
-        open={isDialogOpen}
-        title="New Subject"
-        onClose={() => setIsDialogOpen(false)}
-      >
-        <div className="space-y-6">
-          <div>
-            <label className="mb-2 block text-xl font-medium text-[#354737]">
-              Subject Name
-            </label>
-            <Input
-              placeholder="e.g. Advanced Mathematics"
-              value={form.name}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, name: event.target.value }))
-              }
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-[1fr_130px]">
-            <div>
-              <label className="mb-2 block text-xl font-medium text-[#354737]">
-                Room
-              </label>
-              <Input
-                placeholder="e.g. Hall 4"
-                value={form.room}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, room: event.target.value }))
-                }
-              />
-            </div>
-
-            <label className="block">
-              <span className="mb-2 block text-xl font-medium text-[#354737]">Color</span>
-              <span className="flex h-[54px] items-center rounded-2xl border border-[#ddd4c3] bg-[#f8f5ef] px-2 shadow-[0_5px_18px_rgba(75,84,63,0.08)]">
-                <input
-                  type="color"
-                  value={form.color}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, color: event.target.value }))
-                  }
-                  className="h-8 w-full cursor-pointer appearance-none border-0 bg-transparent p-0"
-                />
-              </span>
-            </label>
-          </div>
-
-          {message ? <p className="text-sm text-red-600">{message}</p> : null}
-
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateSubject} disabled={!form.name.trim()}>
-              Create
-            </Button>
-          </div>
-        </div>
-      </AlertDialog>
-
-      {/* Edit Subject Dialog */}
-      <AlertDialog
-        open={isEditDialogOpen}
-        title="Edit Subject"
-        onClose={() => setIsEditDialogOpen(false)}
-      >
-        <div className="space-y-6">
-          <div>
-            <label className="mb-2 block text-xl font-medium text-[#354737]">
-              Subject Name
-            </label>
-            <Input
-              placeholder="e.g. Advanced Mathematics"
-              value={form.name}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, name: event.target.value }))
-              }
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-[1fr_130px]">
-            <div>
-              <label className="mb-2 block text-xl font-medium text-[#354737]">
-                Room
-              </label>
-              <Input
-                placeholder="e.g. Hall 4"
-                value={form.room}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, room: event.target.value }))
-                }
-              />
-            </div>
-
-            <label className="block">
-              <span className="mb-2 block text-xl font-medium text-[#354737]">Color</span>
-              <span className="flex h-[54px] items-center rounded-2xl border border-[#ddd4c3] bg-[#f8f5ef] px-2 shadow-[0_5px_18px_rgba(75,84,63,0.08)]">
-                <input
-                  type="color"
-                  value={form.color}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, color: event.target.value }))
-                  }
-                  className="h-8 w-full cursor-pointer appearance-none border-0 bg-transparent p-0"
-                />
-              </span>
-            </label>
-          </div>
-
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateSubject} disabled={!form.name.trim()}>
-              Save Changes
-            </Button>
-          </div>
-        </div>
-      </AlertDialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog
-        open={isDeleteDialogOpen}
-        title="Delete Subject"
-        onClose={() => setIsDeleteDialogOpen(false)}
-      >
-        <div className="space-y-4">
-          <p className="text-lg text-[#6e7c69]">
-            Are you sure you want to delete <strong>{selectedSubject?.name}</strong>?
-          </p>
-
-          <p className="text-sm text-red-600">
-            All tasks and schedules under this subject will also be permanently deleted.
-          </p>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleDeleteSubject}
-              className="bg-red-600 text-white hover:bg-red-700"
-            >
-              Delete
-            </Button>
-          </div>
-        </div>
-      </AlertDialog>
-    </div>
+    <SubjectsView
+      subjects={subjects}
+      loading={loading}
+      isDialogOpen={isDialogOpen}
+      isEditDialogOpen={isEditDialogOpen}
+      isDeleteDialogOpen={isDeleteDialogOpen}
+      selectedSubject={selectedSubject}
+      message={message}
+      form={form}
+      onOpenNew={() => {
+        setMessage("");
+        setIsDialogOpen(true);
+      }}
+      onOpenEdit={handleOpenEdit}
+      onOpenDelete={handleOpenDelete}
+      onDialogClose={() => setIsDialogOpen(false)}
+      onEditDialogClose={() => setIsEditDialogOpen(false)}
+      onDeleteDialogClose={() => setIsDeleteDialogOpen(false)}
+      onFormChange={(field, value) => setForm((current) => ({ ...current, [field]: value }))}
+      onCreate={handleCreateSubject}
+      onUpdate={handleUpdateSubject}
+      onDelete={handleDeleteSubject}
+    />
   );
 }

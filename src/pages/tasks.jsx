@@ -1,28 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  ChevronDown,
-  ListChecks,
-  Plus,
-  Edit,
-  Trash2,
-  Calendar,
-} from "lucide-react";
-import { Checkbox } from "../components/ui/checkbox";
-import { format, parseISO, isAfter, isToday, differenceInDays, isPast } from "date-fns";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-import { AlertDialog } from "../components/ui/alert-dialog";
-import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
-import { Input } from "../components/ui/input";
+import { differenceInDays, isAfter, isPast, isToday, parseISO } from "date-fns";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
-import { DatePicker } from "../components/ui/date-picker";
-import { SelectField } from "../components/ui/SelectField";
-
-function cn(...inputs) {
-  return twMerge(clsx(inputs));
-}
+import TasksView from "../views/tasks/TasksView";
 
 const filters = ["All", "Urgent", "Ongoing", "Done"];
 
@@ -34,7 +14,7 @@ export default function Tasks() {
   const [subjects, setSubjects] = useState([]);
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [editingTask, setEditingTask] = useState(null); // State to hold the task being edited
+  const [editingTask, setEditingTask] = useState(null);
   const [form, setForm] = useState({
     title: "",
     status: "Ongoing",
@@ -46,7 +26,6 @@ export default function Tasks() {
     const loadInitialData = async () => {
       if (!user?.id) return;
 
-      // Fetch tasks with subject names
       const { data: tasksData, error: tasksError } = await supabase
         .from("tasks")
         .select("id, title, status, deadline, subjects ( name, color )")
@@ -68,7 +47,6 @@ export default function Tasks() {
         setTasks(formattedTasks);
       }
 
-      // Fetch subjects for the dropdown
       const { data: subjectsData, error: subjectsError } = await supabase
         .from("subjects")
         .select("id, name, color")
@@ -89,25 +67,26 @@ export default function Tasks() {
     const updateTaskStatuses = async () => {
       const today = new Date();
       const updates = [];
-      const updatedTasks = tasks.map(task => {
+      const updatedTasks = tasks.map((task) => {
         if (task.status === "Done" || !task.deadline) {
           return task;
         }
 
-        const deadline = task.deadline;
-        const diffDays = differenceInDays(deadline, today);
+        const diffDays = differenceInDays(task.deadline, today);
         let newStatus = task.status;
 
-        if (isPast(deadline) && !isToday(deadline)) {
+        if (isPast(task.deadline) && !isToday(task.deadline)) {
           newStatus = "Urgent";
-        } else if (isToday(deadline) || (isAfter(deadline, today) && diffDays <= 2)) {
+        } else if (isToday(task.deadline) || (isAfter(task.deadline, today) && diffDays <= 2)) {
           newStatus = "Urgent";
-        } else if (isAfter(deadline, today) && diffDays > 2) {
+        } else if (isAfter(task.deadline, today) && diffDays > 2) {
           newStatus = "Ongoing";
         }
 
         if (newStatus !== task.status) {
-          updates.push(supabase.from("tasks").update({ status: newStatus.toLowerCase() }).eq("id", task.id));
+          updates.push(
+            supabase.from("tasks").update({ status: newStatus.toLowerCase() }).eq("id", task.id)
+          );
           return { ...task, status: newStatus };
         }
 
@@ -123,15 +102,12 @@ export default function Tasks() {
     if (tasks.length > 0) {
       updateTaskStatuses();
     }
-  }, [tasks, user]);
+  }, [tasks]);
 
   const visibleTasks = useMemo(() => {
     const filtered =
-      activeFilter === "All"
-        ? tasks
-        : tasks.filter((task) => task.status === activeFilter);
+      activeFilter === "All" ? tasks : tasks.filter((task) => task.status === activeFilter);
 
-    // Sort by status ("Done" tasks last), then by deadline
     return filtered.sort((a, b) => {
       if (a.status === "Done" && b.status !== "Done") return 1;
       if (a.status !== "Done" && b.status === "Done") return -1;
@@ -145,7 +121,7 @@ export default function Tasks() {
   const handleToggleTaskStatus = async (task) => {
     const newStatus = task.status === "Done" ? "Ongoing" : "Done";
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("tasks")
       .update({ status: newStatus.toLowerCase() })
       .eq("id", task.id)
@@ -154,47 +130,19 @@ export default function Tasks() {
 
     if (error) {
       console.error("Error updating task status:", error);
-      // Optionally show a message to the user
       return;
     }
 
     setTasks((current) =>
-      current.map((t) =>
-        t.id === task.id
-          ? {
-              ...t,
-              status: newStatus,
-            }
-          : t
-      )
+      current.map((entry) => (entry.id === task.id ? { ...entry, status: newStatus } : entry))
     );
   };
 
-  const handleCreateTaskWithNewSubject = async (taskTitle, subjectName, subjectColor) => {
-    console.log("Attempting transactional insert...");
-
-    const { data, error } = await supabase.rpc('create_task_with_new_subject', {
-      task_title: taskTitle,
-      new_subject_name: subjectName,
-      new_subject_color: subjectColor
-    });
-
-    if (error) {
-      console.error('Transaction failed:', error.message);
-      // You can add logic here to show an error message to the user
-    } else {
-      console.log('Transaction successful! New task created with ID:', data);
-      // To see the new data, you should refresh the task list from the database
-      loadInitialData(); // Assuming loadInitialData is the function that fetches tasks
-    }
-  };
-
   const handleCreateTask = async () => {
-    if (isSaving) return;
-    setIsSaving(true);
-
     if (!form.title.trim() || !user) return;
 
+    if (isSaving) return;
+    setIsSaving(true);
 
     const taskPayload = {
       user_id: user.id,
@@ -217,7 +165,7 @@ export default function Tasks() {
       return;
     }
 
-    const selectedSubject = subjects.find((s) => s.id === form.subject_id);
+    const selectedSubject = subjects.find((subject) => subject.id === form.subject_id);
 
     setTasks((current) => [
       ...current,
@@ -237,10 +185,10 @@ export default function Tasks() {
   };
 
   const handleUpdateTask = async () => {
+    if (!form.title.trim() || !user || !editingTask) return;
+
     if (isSaving) return;
     setIsSaving(true);
-
-    if (!form.title.trim() || !user || !editingTask) return;
 
     const taskPayload = {
       title: form.title.trim(),
@@ -300,7 +248,7 @@ export default function Tasks() {
     setForm({
       title: task.title,
       status: task.status,
-      subject_id: subjects.find((s) => s.name === task.subject)?.id || "",
+      subject_id: subjects.find((subject) => subject.name === task.subject)?.id || "",
       deadline: task.deadline,
     });
     setIsDialogOpen(true);
@@ -328,206 +276,26 @@ export default function Tasks() {
   };
 
   return (
-    <div className="space-y-6">
-      <section className="flex flex-wrap items-center justify-between gap-4">
-        <div className="inline-flex rounded-[22px] border-[var(--app-border)] bg-[var(--app-panel-soft)] p-1 shadow-[0_12px_28px_rgba(127,117,96,0.1)]">
-          {filters.map((filter) => (
-            <button
-              key={filter}
-              type="button"
-              onClick={() => setActiveFilter(filter)}
-              className={cn(
-                "rounded-[18px] px-6 py-3 text-xl font-medium transition-colors",
-                activeFilter === filter
-                  ? "bg-[#f2eee6] text-[#354737]"
-                  : "text-[#5e6f5d] hover:bg-[#f4f0e7]"
-              )}
-            >
-              {filter}
-            </button>
-          ))}
-        </div>
-
-        <Button
-          variant="icon"
-          className="h-12 w-12"
-          onClick={openNewDialog}
-          aria-label="Add task"
-        >
-          <Plus size={22} />
-        </Button>
-      </section>
-
-      <Card className="min-h-[260px] border-dashed border-[var(--app-border)] bg-[color:color-mix(in_srgb,var(--app-panel)_92%,transparent)] p-7 shadow-none flex min-h-[270px] flex-col items-center justify-center">
-        {visibleTasks.length === 0 ? (
-          <>
-            <ListChecks size={54} className="text-[#afb4a8]" />
-            <p className="mt-5 text-2xl text-[#6e7c69]">No tasks yet. Add one to get started.</p>
-          </>
-        ) : (
-          <div className="mt-6 w-full space-y-3 text-left">
-            {visibleTasks.map((task) => {
-
-              const statusStyles = {
-                Urgent: {
-                  text: "text-[#b4545c]",
-                  border: "#d28a92",
-                },
-                Ongoing: {
-                  text: "text-[#9c7446]",
-                  border: "#cfb08a",
-                },
-                Done: {
-                  text: "text-[#5d7d63]",
-                  border: "#9eb5a2",
-                },
-              };
-
-              return (
-              <div
-                key={task.id}
-                className={cn(
-                  "group flex items-center justify-between rounded-2xl border border-[var(--app-border)] bg-[var(--app-panel)] px-4 py-3 transition-all duration-200 hover:scale-[1.01] hover:shadow-md",
-                  task.status === "Done" && "opacity-60"
-                )}
-                style={{
-                  borderLeft: `5px solid ${task.color || "transparent"}`,
-                  backgroundColor: "var(--app-panel)",
-                }}
-                
-              >
-                <div className="flex items-center gap-4">
-                  <Checkbox
-                    checked={task.status === "Done"}
-                    onCheckedChange={() => handleToggleTaskStatus(task)}
-                    aria-label="Mark task as done"
-                  />
-                  <div className="space-y-2">
-                    <p
-                      className={cn(
-                        "text-xl font-semibold text-[var(--text-primary)]",
-                        task.status === "Done" && "line-through"
-                      )}
-                    >
-                      {task.title}
-                    </p>
-
-                    <div className="mt-2">
-                      <span
-                        className={cn(
-                          "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]",
-
-                          task.status === "Urgent" &&
-                            "bg-[var(--urgent-bg)] text-[var(--urgent-text)] uppercase",
-
-                          task.status === "Ongoing" &&
-                            "bg-[var(--ongoing-bg)] text-[var(--ongoing-text)] uppercase",
-
-                          task.status === "Done" &&
-                            "bg-[var(--done-bg)] text-[var(--done-text)] uppercase"
-                        )}
-                      >
-                        {task.status}
-                      </span>
-                    </div>
-
-                    <p className="mt-1 text-sm uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                      {task.subject}
-                    </p>
-                    {task.deadline && (
-                      <p className="mt-2 flex items-center gap-2 text-sm text-[var(--text-muted)]">
-                        <Calendar size={14} />
-                        Due {format(task.deadline, "MMM d, yyyy")}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div
-                  className={cn(
-                    "flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100",
-                    task.status === "Done" && "hidden"
-                  )}
-                >
-                  <Button variant="ghost" size="icon" onClick={() => openEditDialog(task)}>
-                    <Edit size={18} className="text-[var(--text-muted)]" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)}>
-                    <Trash2 size={18} className="text-[var(--text-muted)]" />
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-          </div>
-        )}
-      </Card>
-
-      <AlertDialog
-        open={isDialogOpen}
-        title={editingTask ? "Edit Task" : "New Task"}
-        onClose={closeDialog}
-      >
-        <div className="space-y-6">
-          <div>
-            <label className="mb-2 block text-xl font-medium text-[var(--text-secondary)]">
-              Task Title
-            </label>
-            <Input
-              placeholder="e.g. Read chapter 4"
-              value={form.title}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, title: event.target.value }))
-              }
-            />
-          </div>
-
-          <div className="grid gap-4">
-            <SelectField
-              label="Subject"
-              value={form.subject_id}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, subject_id: value }))
-              }
-            >
-              <option value="">No subject</option>
-              {subjects.map((subject) => (
-                <option key={subject.id} value={subject.id}>
-                  {subject.name}
-                </option>
-              ))}
-            </SelectField>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-xl font-medium text-[var(--text-secondary)]">
-              Deadline (Optional)
-            </label>
-            <DatePicker
-              value={form.deadline}
-              onChange={(date) =>
-                setForm((current) => ({ ...current, deadline: date }))
-              }
-            />
-          </div>
-
-          {message ? <p className="text-sm text-red-600">{message}</p> : null}
-
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={closeDialog}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving
-                ? editingTask
-                  ? "Saving..."
-                  : "Creating..."
-                : editingTask
-                  ? "Save Changes"
-                  : "Create Task"}
-            </Button>
-          </div>
-        </div>
-      </AlertDialog>
-    </div>
+    <TasksView
+      activeFilter={activeFilter}
+      filters={filters}
+      visibleTasks={visibleTasks}
+      isDialogOpen={isDialogOpen}
+      editingTask={editingTask}
+      form={form}
+      subjects={subjects}
+      message={message}
+      isSaving={isSaving}
+      onFilterChange={setActiveFilter}
+      onOpenNewDialog={openNewDialog}
+      onCloseDialog={closeDialog}
+      onTitleChange={(value) => setForm((current) => ({ ...current, title: value }))}
+      onSubjectChange={(value) => setForm((current) => ({ ...current, subject_id: value }))}
+      onDeadlineChange={(date) => setForm((current) => ({ ...current, deadline: date }))}
+      onSave={handleSave}
+      onToggleTaskStatus={handleToggleTaskStatus}
+      onEditTask={openEditDialog}
+      onDeleteTask={handleDeleteTask}
+    />
   );
 }
