@@ -44,7 +44,7 @@ export default function LandingView({ user, showWelcome }) {
   }, [hoveredPreview]);
 
   return (
-    <div className="min-h-screen bg-[image:var(--landing-gradient)] px-6 py-10 text-[var(--text-primary)]">
+    <div className="min-h-screen overflow-x-hidden bg-[image:var(--landing-gradient)] px-4 py-6 text-[var(--text-primary)] sm:px-6 sm:py-10">
       {localWelcome ? (
         <div className="fixed top-5 right-5 z-50 rounded-2xl bg-[var(--accent)] px-5 py-4 text-white shadow-xl transition-all duration-300">
           <p className="text-lg font-semibold">
@@ -75,19 +75,19 @@ export default function LandingView({ user, showWelcome }) {
         </div>
       ) : null}
 
-      <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl flex-col justify-between">
-        <header className="flex items-center justify-between">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col justify-between sm:min-h-[calc(100vh-5rem)]">
+        <header className="flex flex-wrap items-center justify-between gap-3">
           <img
             src={isDark ? logoDark : logoLight}
             alt="Edash Logo"
-            className="h-30 w-auto"
+            className="h-20 w-auto sm:h-30"
           />
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button
               variant="outline"
               onClick={() => navigate("/login")}
-              className="border-[var(--accent-soft)] bg-[var(--accent-soft)] text-[var(--accent)] shadow-[0_10px_22px_rgba(111,143,88,0.12)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[var(--accent-soft)]/80 hover:shadow-[0_14px_28px_rgba(111,143,88,0.18)]"
+              className="px-4 py-2 text-sm border-[var(--accent-soft)] bg-[var(--accent-soft)] text-[var(--accent)] shadow-[0_10px_22px_rgba(111,143,88,0.12)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[var(--accent-soft)]/80 hover:shadow-[0_14px_28px_rgba(111,143,88,0.18)] sm:px-5 sm:py-3 sm:text-base"
             >
               Log In
             </Button>
@@ -95,27 +95,27 @@ export default function LandingView({ user, showWelcome }) {
             <Button
               variant="outline"
               onClick={() => navigate("/signup")}
-              className="shadow-[0_10px_22px_rgba(127,117,96,0.10)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(127,117,96,0.16)]"
+              className="px-4 py-2 text-sm shadow-[0_10px_22px_rgba(127,117,96,0.10)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(127,117,96,0.16)] sm:px-5 sm:py-3 sm:text-base"
             >
               Sign Up
             </Button>
           </div>
         </header>
 
-        <main className="grid items-center gap-14 py-12 lg:grid-cols-[1.1fr_0.9fr]">
+        <main className="grid items-center gap-8 py-8 sm:gap-14 sm:py-12 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-secondary)] sm:text-sm sm:tracking-[0.24em]">
               Educational Dashboard
             </p>
-            <h2 className="font-serif text-6xl font-semibold leading-[0.95] text-[var(--text-primary)] sm:text-7xl">
+            <h2 className="font-serif text-5xl font-semibold leading-[0.95] text-[var(--text-primary)] sm:text-7xl">
               Master your schedule, conquer your tasks.
             </h2>
-            <p className="mt-6 max-w-xl text-2xl leading-relaxed text-[var(--text-secondary)]">
+            <p className="mt-5 max-w-xl text-lg leading-relaxed text-[var(--text-secondary)] sm:mt-6 sm:text-2xl">
               A soft, focused planner for classes, rooms, reminders, and daily
               school flow. Built to feel like a digital leather notebook.
             </p>
 
-            <div className="mt-10 flex flex-wrap gap-4">
+            <div className="mt-8 flex flex-wrap gap-4 sm:mt-10">
               <Button
                 onClick={() => navigate("/signup")}
                 className="group transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(111,143,88,0.28)]"
@@ -129,14 +129,14 @@ export default function LandingView({ user, showWelcome }) {
             </div>
           </div>
 
-          <section className="group rounded-[34px] border border-[var(--app-border)] bg-[color:color-mix(in_srgb,var(--app-panel)_95%,transparent)] p-6 shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(127,117,96,0.2)]">
-            <div className="rounded-[28px] border border-[var(--app-border)] bg-[linear-gradient(180deg,_var(--app-panel-soft)_0%,_var(--app-panel)_100%)] p-6 transition-colors duration-300 group-hover:border-[var(--accent-soft)]">
+          <section className="group rounded-[28px] border border-[var(--app-border)] bg-[color:color-mix(in_srgb,var(--app-panel)_95%,transparent)] p-4 shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(127,117,96,0.2)] sm:rounded-[34px] sm:p-6">
+            <div className="rounded-[24px] border border-[var(--app-border)] bg-[linear-gradient(180deg,_var(--app-panel-soft)_0%,_var(--app-panel)_100%)] p-4 transition-colors duration-300 group-hover:border-[var(--accent-soft)] sm:rounded-[28px] sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
                     Today
                   </p>
-                  <p className="mt-2 font-serif text-4xl font-semibold text-[var(--text-primary)]">
+                  <p className="mt-2 font-serif text-3xl font-semibold text-[var(--text-primary)] sm:text-4xl">
                     Wednesday
                   </p>
                 </div>
@@ -145,7 +145,7 @@ export default function LandingView({ user, showWelcome }) {
                 </div>
               </div>
 
-              <div className="mt-6 space-y-4">
+              <div className="mt-5 space-y-3 sm:mt-6 sm:space-y-4">
                 <div
                   className="group/preview relative"
                   onMouseEnter={() => setHoveredPreview("schedule")}
@@ -174,7 +174,7 @@ export default function LandingView({ user, showWelcome }) {
           </section>
         </main>
 
-        <footer className="border-t border-[var(--app-border)] pt-6 text-sm uppercase tracking-[0.2em] text-[var(--text-muted)]">
+        <footer className="border-t border-[var(--app-border)] pt-5 text-xs uppercase tracking-[0.16em] text-[var(--text-muted)] sm:pt-6 sm:text-sm sm:tracking-[0.2em]">
           A mobile-friendly web companion for students and educators
         </footer>
       </div>
@@ -184,15 +184,15 @@ export default function LandingView({ user, showWelcome }) {
 
 function PreviewRow({ icon, title, description }) {
   return (
-    <div className="group/row flex gap-4 rounded-[28px] border border-[var(--app-border)] bg-[var(--app-panel)] p-4 shadow-[0_8px_20px_rgba(127,117,96,0.06)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--accent-soft)] hover:bg-[var(--app-panel-soft)] hover:shadow-[0_14px_30px_rgba(127,117,96,0.12)]">
+    <div className="group/row flex gap-3 rounded-[24px] border border-[var(--app-border)] bg-[var(--app-panel)] p-3 shadow-[0_8px_20px_rgba(127,117,96,0.06)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--accent-soft)] hover:bg-[var(--app-panel-soft)] hover:shadow-[0_14px_30px_rgba(127,117,96,0.12)] sm:gap-4 sm:rounded-[28px] sm:p-4">
       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] transition-transform duration-300 group-hover/row:scale-110 group-hover:scale-110">
         {icon}
       </div>
-      <div>
-        <p className="text-xl font-semibold text-[var(--text-primary)] transition-colors duration-300 group-hover:text-[var(--accent)] group-hover/row:text-[var(--accent)]">
+      <div className="min-w-0">
+        <p className="text-lg font-semibold text-[var(--text-primary)] transition-colors duration-300 group-hover:text-[var(--accent)] group-hover/row:text-[var(--accent)] sm:text-xl">
           {title}
         </p>
-        <p className="mt-1 text-lg text-[var(--text-secondary)] transition-colors duration-300 group-hover:text-[var(--text-primary)]">
+        <p className="mt-1 text-sm text-[var(--text-secondary)] transition-colors duration-300 group-hover:text-[var(--text-primary)] sm:text-lg">
           {description}
         </p>
       </div>

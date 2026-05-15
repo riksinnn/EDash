@@ -23,10 +23,10 @@ export default function SettingsView({
   }, [user]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <Card className="overflow-hidden">
-        <div className="h-28 bg-[radial-gradient(circle_at_top,_rgba(165,175,155,0.26),_transparent_55%),linear-gradient(180deg,_var(--app-panel-soft)_0%,_var(--app-panel)_100%)]" />
-        <div className="relative px-7 pb-7">
+        <div className="h-24 bg-[radial-gradient(circle_at_top,_rgba(165,175,155,0.26),_transparent_55%),linear-gradient(180deg,_var(--app-panel-soft)_0%,_var(--app-panel)_100%)] sm:h-28" />
+        <div className="relative px-5 pb-5 sm:px-7 sm:pb-7">
           <div className="-mt-14 flex flex-col gap-5 sm:flex-row sm:items-end">
             <Avatar
               src={user?.photoURL}
@@ -34,10 +34,10 @@ export default function SettingsView({
               fallback={initials}
             />
             <div className="pb-1">
-              <h2 className="font-serif text-4xl font-semibold text-[var(--text-primary)]">
+              <h2 className="font-serif text-3xl font-semibold text-[var(--text-primary)] sm:text-4xl">
                 {user?.displayName || "Student Planner"}
               </h2>
-              <p className="mt-1 text-xl text-[var(--text-secondary)]">
+              <p className="mt-1 break-words text-base text-[var(--text-secondary)] sm:text-xl">
                 {user?.email || "planner@edash.app"}
               </p>
             </div>
@@ -109,7 +109,7 @@ export default function SettingsView({
 
 function SectionTitle({ children }) {
   return (
-    <h3 className="px-2 text-xl font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
+    <h3 className="px-2 text-sm font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)] sm:text-xl">
       {children}
     </h3>
   );
@@ -122,12 +122,12 @@ function SettingsGroup({ children }) {
 function SettingsRow({ icon, title, description, trailing, onClick }) {
   const content = (
     <>
-      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--app-panel-soft)] text-[var(--text-secondary)]">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--app-panel-soft)] text-[var(--text-secondary)] sm:h-11 sm:w-11">
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-2xl font-medium text-[var(--text-primary)]">{title}</p>
-        <p className="text-lg text-[var(--text-muted)]">{description}</p>
+        <p className="text-lg font-medium text-[var(--text-primary)] sm:text-2xl">{title}</p>
+        <p className="text-sm text-[var(--text-muted)] sm:text-lg">{description}</p>
       </div>
       {trailing || <ChevronRight size={22} className="text-[var(--text-muted)]" />}
     </>
@@ -138,7 +138,7 @@ function SettingsRow({ icon, title, description, trailing, onClick }) {
       <button
         type="button"
         onClick={onClick}
-        className="flex w-full items-center gap-4 border-b border-[var(--app-border)] px-5 py-5 text-left transition-colors hover:bg-[var(--accent-soft)] last:border-b-0"
+        className="flex w-full items-center gap-3 border-b border-[var(--app-border)] px-4 py-4 text-left transition-colors hover:bg-[var(--accent-soft)] last:border-b-0 sm:gap-4 sm:px-5 sm:py-5"
       >
         {content}
       </button>
@@ -146,7 +146,7 @@ function SettingsRow({ icon, title, description, trailing, onClick }) {
   }
 
   return (
-    <div className="flex items-center gap-4 border-b border-[var(--app-border)] px-5 py-5 last:border-b-0">
+    <div className="flex items-center gap-3 border-b border-[var(--app-border)] px-4 py-4 last:border-b-0 sm:gap-4 sm:px-5 sm:py-5">
       {content}
     </div>
   );
