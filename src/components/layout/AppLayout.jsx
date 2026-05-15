@@ -38,7 +38,7 @@ function AppNavItem({ item }) {
       to={item.path}
       className={({ isActive }) =>
         cn(
-          "flex flex-col items-center gap-2 rounded-2xl px-3 py-2 text-xs font-medium transition-colors",
+          "flex min-w-0 flex-col items-center gap-1 rounded-2xl px-1 py-1.5 text-[10px] font-medium transition-colors sm:gap-2 sm:px-3 sm:py-2 sm:text-xs",
           isActive
             ? "text-[var(--accent)]"
             : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -55,7 +55,7 @@ function AppNavItem({ item }) {
           >
             <Icon size={20} strokeWidth={2.1} />
           </span>
-          <span>{item.label}</span>
+          <span className="truncate">{item.label}</span>
         </>
       )}
     </NavLink>
@@ -67,14 +67,14 @@ export default function AppLayout({ children }) {
   const title = pageTitles[location.pathname] ?? "Edash";
 
   return (
-    <div className="min-h-screen bg-[var(--app-bg)] text-[var(--text-primary)]">
+    <div className="min-h-screen overflow-x-hidden bg-[var(--app-bg)] text-[var(--text-primary)]">
       <div
-        className="mx-auto min-h-screen max-w-[1440px] border-x bg-[image:var(--shell-gradient)]"
+        className="mx-auto min-h-screen max-w-[1440px] bg-[image:var(--shell-gradient)] sm:border-x"
         style={{ borderColor: "var(--app-border)" }}
       >
        
         <header
-          className="border-b px-4 py-5 text-center sm:px-6"
+          className="border-b px-3 py-4 text-center sm:px-6 sm:py-5"
           style={{ borderColor: "var(--app-border)" }}
         >
           <h1 className="font-serif text-4xl font-semibold tracking-tight text-[var(--accent)] sm:text-5xl">
@@ -82,7 +82,7 @@ export default function AppLayout({ children }) {
           </h1>
         </header>
 
-        <main className="px-4 pb-28 pt-5 sm:px-6 sm:pt-8">
+        <main className="px-3 pb-24 pt-4 sm:px-6 sm:pb-28 sm:pt-8">
           <div className="mx-auto max-w-4xl">{children}</div>
         </main>
 
@@ -93,7 +93,7 @@ export default function AppLayout({ children }) {
             backgroundColor: "var(--nav-bg)",
           }}
         >
-          <div className="mx-auto grid max-w-[1440px] grid-cols-5 gap-2 px-4 py-4 sm:px-6">
+          <div className="mx-auto grid max-w-[1440px] grid-cols-5 gap-1 px-2 py-2.5 sm:gap-2 sm:px-6 sm:py-4">
             {navItems.map((item) => (
               <AppNavItem key={item.label} item={item} />
             ))}

@@ -7,8 +7,8 @@ import { SimpleBarChart } from "../../components/ui/chart";
 function StatCard({ label, value, tone = "text-[var(--text-primary)]" }) {
   return (
     <Card className="p-5 text-center">
-      <p className={`text-4xl font-semibold ${tone}`}>{value}</p>
-      <p className="mt-2 text-sm uppercase tracking-[0.12em] text-[var(--text-secondary)]">
+      <p className={`text-3xl font-semibold sm:text-4xl ${tone}`}>{value}</p>
+      <p className="mt-2 text-xs uppercase tracking-[0.12em] text-[var(--text-secondary)] sm:text-sm">
         {label}
       </p>
     </Card>
@@ -30,12 +30,12 @@ export default function ReportsView({
 
   return (
     <div className="space-y-7">
-      <section className="flex flex-wrap items-start justify-between gap-4">
+      <section className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div>
-          <h2 className="font-serif text-5xl font-semibold text-[var(--text-primary)]">
+          <h2 className="font-serif text-4xl font-semibold text-[var(--text-primary)] sm:text-5xl">
             Weekly Reports
           </h2>
-          <p className="mt-2 text-xl text-[var(--text-secondary)]">
+          <p className="mt-2 text-base text-[var(--text-secondary)] sm:text-xl">
             Task progress based on deadline week.
           </p>
         </div>
@@ -57,7 +57,7 @@ export default function ReportsView({
         </Card>
       ) : (
         <>
-          <section className="grid gap-4 sm:grid-cols-5">
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4">
             <StatCard label="Total" value={currentWeek.total} />
             <StatCard label="Done" value={currentWeek.done} tone="text-[var(--done-text)]" />
             <StatCard label="Not Done" value={currentWeek.notDone} tone="text-[#cf4c4a]" />
@@ -69,7 +69,7 @@ export default function ReportsView({
             <div className="mb-5 flex items-center gap-3">
               <ListChecks size={22} className="text-[var(--accent)]" />
               <div>
-                <h3 className="text-2xl font-semibold text-[var(--text-primary)]">
+                <h3 className="text-xl font-semibold text-[var(--text-primary)] sm:text-2xl">
                   Completion Rate
                 </h3>
                 <p className="text-sm text-[var(--text-secondary)]">
@@ -85,7 +85,7 @@ export default function ReportsView({
               <div className="flex items-center gap-3">
                 <Activity size={22} className="text-[var(--accent)]" />
                 <div>
-                  <h3 className="text-2xl font-semibold text-[var(--text-primary)]">
+                  <h3 className="text-xl font-semibold text-[var(--text-primary)] sm:text-2xl">
                     User Activity Logs
                   </h3>
                   <p className="text-sm text-[var(--text-secondary)]">

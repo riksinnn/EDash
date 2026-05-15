@@ -36,16 +36,16 @@ export default function TasksView({
   onDeleteTask,
 }) {
   return (
-    <div className="space-y-6">
-      <section className="flex flex-wrap items-center justify-between gap-4">
-        <div className="inline-flex rounded-[22px] border-[var(--app-border)] bg-[var(--app-panel-soft)] p-1 shadow-[0_12px_28px_rgba(127,117,96,0.1)]">
+    <div className="space-y-5 sm:space-y-6">
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="grid w-full grid-cols-4 rounded-[18px] border-[var(--app-border)] bg-[var(--app-panel-soft)] p-1 shadow-[0_12px_28px_rgba(127,117,96,0.1)] sm:inline-flex sm:w-auto sm:rounded-[22px]">
           {filters.map((filter) => (
             <button
               key={filter}
               type="button"
               onClick={() => onFilterChange(filter)}
               className={cn(
-                "rounded-[18px] px-6 py-3 text-xl font-medium transition-colors",
+                "min-w-0 rounded-[14px] px-2 py-2.5 text-sm font-medium transition-colors sm:rounded-[18px] sm:px-6 sm:py-3 sm:text-xl",
                 activeFilter === filter
                   ? "bg-[#f2eee6] text-[#354737]"
                   : "text-[#5e6f5d] hover:bg-[#f4f0e7]"
@@ -58,7 +58,7 @@ export default function TasksView({
 
         <Button
           variant="icon"
-          className="h-12 w-12"
+          className="h-12 w-12 self-end sm:self-auto"
           onClick={onOpenNewDialog}
           aria-label="Add task"
         >
@@ -66,11 +66,11 @@ export default function TasksView({
         </Button>
       </section>
 
-      <Card className="min-h-[260px] border-dashed border-[var(--app-border)] bg-[color:color-mix(in_srgb,var(--app-panel)_92%,transparent)] p-7 shadow-none flex min-h-[270px] flex-col items-center justify-center">
+      <Card className="flex min-h-[270px] flex-col items-center justify-center border-dashed border-[var(--app-border)] bg-[color:color-mix(in_srgb,var(--app-panel)_92%,transparent)] p-4 shadow-none sm:p-7">
         {visibleTasks.length === 0 ? (
           <>
-            <ListChecks size={54} className="text-[#afb4a8]" />
-            <p className="mt-5 text-2xl text-[#6e7c69]">
+            <ListChecks size={46} className="text-[#afb4a8] sm:size-[54px]" />
+            <p className="mt-5 max-w-[18rem] text-center text-xl leading-snug text-[#6e7c69] sm:max-w-none sm:text-2xl">
               No tasks yet. Add one to get started.
             </p>
           </>
@@ -80,7 +80,7 @@ export default function TasksView({
               <div
                 key={task.id}
                 className={cn(
-                  "group flex items-center justify-between rounded-2xl border border-[var(--app-border)] bg-[var(--app-panel)] px-4 py-3 transition-all duration-200 hover:scale-[1.01] hover:shadow-md",
+                  "group flex items-start justify-between gap-3 rounded-2xl border border-[var(--app-border)] bg-[var(--app-panel)] px-3 py-3 transition-all duration-200 hover:scale-[1.01] hover:shadow-md sm:items-center sm:px-4",
                   task.status === "Done" && "opacity-60"
                 )}
                 style={{
@@ -88,16 +88,16 @@ export default function TasksView({
                   backgroundColor: "var(--app-panel)",
                 }}
               >
-                <div className="flex items-center gap-4">
+                <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
                   <Checkbox
                     checked={task.status === "Done"}
                     onCheckedChange={() => onToggleTaskStatus(task)}
                     aria-label="Mark task as done"
                   />
-                  <div className="space-y-2">
+                  <div className="min-w-0 space-y-2">
                     <p
                       className={cn(
-                        "text-xl font-semibold text-[var(--text-primary)]",
+                        "break-words text-lg font-semibold text-[var(--text-primary)] sm:text-xl",
                         task.status === "Done" && "line-through"
                       )}
                     >

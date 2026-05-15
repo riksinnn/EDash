@@ -37,27 +37,28 @@ export default function SubjectsView({
   onDelete,
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <section className="flex items-center justify-between gap-4">
-        <h2 className="font-serif text-5xl font-semibold text-[var(--accent)]">
+        <h2 className="font-serif text-4xl font-semibold text-[var(--accent)] sm:text-5xl">
           Your Subjects
         </h2>
       </section>
 
-      <div className="sticky top-4 z-20 -mt-2 mb-4 ml-auto flex w-fit max-w-full items-center gap-3 rounded-2xl border border-[var(--app-border)] bg-[var(--app-panel)] p-2 shadow-[var(--shadow-card)]">
+      <div className="sticky top-3 z-20 -mt-2 mb-4 ml-auto flex w-fit max-w-full items-center gap-2 rounded-2xl border border-[var(--app-border)] bg-[var(--app-panel)] p-2 shadow-[var(--shadow-card)] sm:top-4 sm:gap-3">
           {isSelectionMode ? (
             <>
               <Button variant="outline" onClick={onCancelSelection}>
                 Cancel
               </Button>
-              <Button onClick={onOpenTeacherDialog} disabled={selectedSubjectIds.length === 0}>
+              <Button className="px-3 sm:px-5" onClick={onOpenTeacherDialog} disabled={selectedSubjectIds.length === 0}>
                 Add Teacher ({selectedSubjectIds.length})
               </Button>
             </>
           ) : (
-            <Button variant="outline" className="gap-2" onClick={onStartTeacherAssignment}>
+            <Button variant="outline" className="gap-2 px-3 sm:px-5" onClick={onStartTeacherAssignment}>
               <UserRoundPlus size={18} />
-              Assign Teacher
+              <span className="hidden min-[380px]:inline">Assign Teacher</span>
+              <span className="min-[380px]:hidden">Teacher</span>
             </Button>
           )}
           <Button variant="icon" className="h-12 w-12" onClick={onOpenNew} aria-label="Add subject">
@@ -65,15 +66,15 @@ export default function SubjectsView({
           </Button>
       </div>
 
-      <Card className="min-h-[260px] border-dashed border-[#354637]/50 bg-[#354637] p-7 shadow-none">
+      <Card className="min-h-[240px] border-dashed border-[#354637]/50 bg-[#354637] p-4 shadow-none sm:min-h-[260px] sm:p-7">
         {loading ? (
           <div className="flex min-h-[180px] items-center justify-center">
-            <p className="text-2xl text-[#6e7c69]">Loading subjects...</p>
+            <p className="text-xl text-[#6e7c69] sm:text-2xl">Loading subjects...</p>
           </div>
         ) : subjects.length === 0 ? (
           <div className="flex min-h-[180px] flex-col items-center justify-center text-center">
             <BookOpen size={48} className="text-[#aab1a3]" />
-            <p className="mt-4 text-2xl text-[#6e7c69]">
+            <p className="mt-4 text-xl text-[#6e7c69] sm:text-2xl">
               No subjects yet. Add one to start organizing classes.
             </p>
           </div>
@@ -103,7 +104,7 @@ export default function SubjectsView({
                   className="mb-4 h-3 w-16 rounded-full"
                   style={{ backgroundColor: subject.color }}
                 />
-                <p className="text-2xl font-semibold text-[#354737]">{subject.name}</p>
+                <p className="break-words text-xl font-semibold text-[#354737] sm:text-2xl">{subject.name}</p>
                 <p className="mt-1 text-lg text-[#6e7c69]">
                   {subject.room || "Room not set"}
                 </p>
