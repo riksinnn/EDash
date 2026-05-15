@@ -1,11 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { recordActivity } from "../lib/activityLog";
+import {
+  fetchUpcomingGoogleCalendarEvents,
+  getGoogleCalendarAccessToken,
+} from "../lib/googleCalendar";
 import { supabase } from "../lib/supabase";
 import ScheduleView from "../views/schedule/ScheduleView";
 
 const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const dayMap = { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 };
+const scheduleSelectWithTeacher =
+  "id, subject_id, day_of_week, start_time, end_time, subjects ( name, color, room, teacher )";
+const scheduleSelectFallback =
+  "id, subject_id, day_of_week, start_time, end_time, subjects ( name, color, room )";
+const subjectsSelectWithTeacher = "id, name, color, room, teacher";
+const subjectsSelectFallback = "id, name, color, room";
 
 export default function Schedule() {
   const navigate = useNavigate();
@@ -18,6 +29,8 @@ export default function Schedule() {
   const [subjects, setSubjects] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [isSyncingCalendar, setIsSyncingCalendar] = useState(false);
+  const [isGoogleSyncConfirmOpen, setIsGoogleSyncConfirmOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
@@ -44,32 +57,57 @@ export default function Schedule() {
     const loadInitialData = async () => {
       if (!user?.id) return;
 
-      const { data: scheduleData, error: scheduleError } = await supabase
+      let { data: scheduleData, error: scheduleError } = await supabase
         .from("schedule")
-        .select("id, subject_id, day_of_week, start_time, end_time, subjects ( name, color )")
+        .select(scheduleSelectWithTeacher)
         .eq("user_id", user.id);
 
       if (scheduleError) {
+        console.warn("Retrying schedule load without teacher column:", scheduleError);
+        const fallbackResult = await supabase
+          .from("schedule")
+          .select(scheduleSelectFallback)
+          .eq("user_id", user.id);
+        scheduleData = fallbackResult.data;
+        scheduleError = fallbackResult.error;
+      }
+
+      if (scheduleError) {
         console.error("Error fetching schedule:", scheduleError);
+        setErrorMessage("Could not load your saved schedule.");
       } else if (scheduleData) {
         const formattedEntries = scheduleData.map((entry) => ({
           id: entry.id,
           subject_id: String(entry.subject_id),
           day: days[entry.day_of_week],
+          dayIndex: entry.day_of_week,
           subject: entry.subjects?.name || "Unnamed Class",
           startTime: entry.start_time?.slice(0, 5),
           endTime: entry.end_time?.slice(0, 5),
           color: entry.subjects?.color,
+          room: entry.subjects?.room,
+          teacher: entry.subjects?.teacher,
         }));
 
         setEntries(formattedEntries);
       }
 
-      const { data: subjectsData, error: subjectsError } = await supabase
+      let { data: subjectsData, error: subjectsError } = await supabase
         .from("subjects")
-        .select("id, name, color")
+        .select(subjectsSelectWithTeacher)
         .eq("user_id", user.id)
         .order("name");
+
+      if (subjectsError) {
+        console.warn("Retrying subjects load without teacher column:", subjectsError);
+        const fallbackResult = await supabase
+          .from("subjects")
+          .select(subjectsSelectFallback)
+          .eq("user_id", user.id)
+          .order("name");
+        subjectsData = fallbackResult.data;
+        subjectsError = fallbackResult.error;
+      }
 
       if (subjectsError) {
         console.error("Error fetching subjects:", subjectsError);
@@ -244,6 +282,8 @@ export default function Schedule() {
             startTime: form.start_time,
             endTime: form.end_time,
             color: selectedSubject?.color,
+            room: selectedSubject?.room,
+            teacher: selectedSubject?.teacher,
           };
         })
       );
@@ -253,10 +293,13 @@ export default function Schedule() {
           id: item.id,
           subject_id: item.subject_id,
           day: days[item.day_of_week],
+          dayIndex: item.day_of_week,
           subject: selectedSubject?.name || "Unnamed Class",
           startTime: item.start_time.slice(0, 5),
           endTime: item.end_time.slice(0, 5),
           color: selectedSubject?.color,
+          room: selectedSubject?.room,
+          teacher: selectedSubject?.teacher,
         }));
 
         setEntries((current) => [...current, ...newEntries]);
@@ -265,6 +308,15 @@ export default function Schedule() {
       setIsEditDialogOpen(false);
       setSelectedEntry(null);
       setSuccessMessage("Class updated successfully");
+
+      await recordActivity({
+        userId: user.id,
+        action: "updated",
+        entityType: "schedule",
+        entityId: selectedEntry.id,
+        description: `Updated schedule for ${selectedSubject?.name || "class"}`,
+        metadata: { days: form.days, start_time: form.start_time, end_time: form.end_time },
+      });
     } catch (error) {
       console.error(error);
       setErrorMessage("Something went wrong.");
@@ -296,6 +348,20 @@ export default function Schedule() {
       console.error("Error deleting schedule:", deleteError);
       alert("Could not delete the class.");
     } else {
+      await recordActivity({
+        userId: user?.id,
+        action: "deleted",
+        entityType: "schedule",
+        entityId: selectedEntry.id,
+        description: `Deleted schedule for ${selectedEntry.subject}`,
+        metadata: {
+          day: selectedEntry.day,
+          start_time: selectedEntry.startTime,
+          end_time: selectedEntry.endTime,
+          delete_all_days: deleteAllDays,
+        },
+      });
+
       setEntries((current) => {
         if (deleteAllDays) {
           return current.filter(
@@ -404,10 +470,13 @@ export default function Schedule() {
       id: item.id,
       subject_id: item.subject_id,
       day: days[item.day_of_week],
+      dayIndex: item.day_of_week,
       subject: selectedSubject?.name || "Unnamed Class",
       startTime: item.start_time.slice(0, 5),
       endTime: item.end_time.slice(0, 5),
       color: selectedSubject?.color,
+      room: selectedSubject?.room,
+      teacher: selectedSubject?.teacher,
     }));
 
     setEntries((current) => [...current, ...newEntries]);
@@ -417,6 +486,156 @@ export default function Schedule() {
     setSuccessMessage("Class scheduled successfully");
     setIsDialogOpen(false);
     setIsSaving(false);
+
+    await recordActivity({
+      userId: user.id,
+      action: "created",
+      entityType: "schedule",
+      entityId: data[0]?.id,
+      description: `Scheduled ${selectedSubject?.name || "class"}`,
+      metadata: { days: form.days, start_time: form.start_time, end_time: form.end_time },
+    });
+  };
+
+  const formatTimeValue = (date) =>
+    `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+
+  const getOrCreateSubjectFromEvent = async (event, subjectCache) => {
+    const subjectName = event.summary?.trim();
+    if (!subjectName) return null;
+
+    const key = subjectName.toLowerCase();
+    const existingSubject = subjectCache.get(key);
+    if (existingSubject) return existingSubject;
+
+    const teacher =
+      event.organizer?.displayName || event.creator?.displayName || event.organizer?.email || null;
+
+    const { data, error } = await supabase.rpc("create_subject_for_user", {
+      name: subjectName,
+      room: event.location?.trim() || null,
+      teacher,
+      color: "#8cae8a",
+    });
+
+    if (error) throw error;
+
+    const newSubject = {
+      id: data.id,
+      name: data.name,
+      color: data.color,
+      room: data.room,
+      teacher: data.teacher,
+    };
+
+    subjectCache.set(key, newSubject);
+    setSubjects((current) => {
+      if (current.some((subject) => subject.id === newSubject.id)) return current;
+      return [...current, newSubject].sort((a, b) => a.name.localeCompare(b.name));
+    });
+
+    await recordActivity({
+      userId: user.id,
+      action: "created",
+      entityType: "subject",
+      entityId: newSubject.id,
+      description: `Created subject ${newSubject.name} from Google Calendar`,
+      metadata: { source: "google_calendar" },
+    });
+
+    return newSubject;
+  };
+
+  const handleGoogleCalendarSync = async () => {
+    if (!user?.id || isSyncingCalendar) return;
+
+    setIsGoogleSyncConfirmOpen(false);
+    setIsSyncingCalendar(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const accessToken = await getGoogleCalendarAccessToken();
+      const events = await fetchUpcomingGoogleCalendarEvents(accessToken);
+      const subjectCache = new Map(
+        subjects.map((subject) => [subject.name.trim().toLowerCase(), subject])
+      );
+      const scheduleKeys = new Set(
+        entries.map(
+          (entry) =>
+            `${entry.subject_id}|${entry.dayIndex}|${entry.startTime}|${entry.endTime}`
+        )
+      );
+      const schedulePayloads = [];
+      const nextEntries = [];
+
+      for (const event of events) {
+        const subject = await getOrCreateSubjectFromEvent(event, subjectCache);
+        if (!subject) continue;
+
+        const startDate = new Date(event.start.dateTime);
+        const endDate = new Date(event.end.dateTime);
+        const dayIndex = startDate.getDay();
+        const day = days[dayIndex];
+        const startTime = formatTimeValue(startDate);
+        const endTime = formatTimeValue(endDate);
+        const scheduleKey = `${subject.id}|${dayIndex}|${startTime}|${endTime}`;
+        const isDuplicate = scheduleKeys.has(scheduleKey);
+
+        if (isDuplicate) continue;
+        scheduleKeys.add(scheduleKey);
+
+        schedulePayloads.push({
+          user_id: user.id,
+          subject_id: subject.id,
+          day_of_week: dayIndex,
+          start_time: startTime,
+          end_time: endTime,
+        });
+
+        nextEntries.push({
+          subject_id: String(subject.id),
+          day,
+          dayIndex,
+          subject: subject.name,
+          startTime,
+          endTime,
+          color: subject.color,
+          room: subject.room,
+          teacher: subject.teacher,
+        });
+      }
+
+      if (schedulePayloads.length === 0) {
+        setSuccessMessage("Google Calendar is already synced.");
+        return;
+      }
+
+      const { data, error } = await supabase.from("schedule").insert(schedulePayloads).select();
+
+      if (error) throw error;
+
+      const insertedEntries = nextEntries.map((entry, index) => ({
+        ...entry,
+        id: data[index].id,
+      }));
+
+      setEntries((current) => [...current, ...insertedEntries]);
+      setSuccessMessage(`Synced ${insertedEntries.length} Google Calendar class events.`);
+
+      await recordActivity({
+        userId: user.id,
+        action: "synced",
+        entityType: "schedule",
+        description: `Synced ${insertedEntries.length} Google Calendar events`,
+        metadata: { source: "google_calendar", count: insertedEntries.length },
+      });
+    } catch (error) {
+      console.error("Google Calendar sync failed:", error);
+      setErrorMessage(error.message || "Could not sync Google Calendar.");
+    } finally {
+      setIsSyncingCalendar(false);
+    }
   };
 
   return (
@@ -440,6 +659,9 @@ export default function Schedule() {
         setSuccessMessage("");
         setIsDialogOpen(true);
       }}
+      onOpenGoogleSyncConfirm={() => setIsGoogleSyncConfirmOpen(true)}
+      onGoogleSyncConfirmClose={() => setIsGoogleSyncConfirmOpen(false)}
+      onSyncGoogleCalendar={handleGoogleCalendarSync}
       dayEntries={dayEntries}
       formatTime={formatTime}
       onOpenEditDialog={openEditDialog}
@@ -453,6 +675,8 @@ export default function Schedule() {
       errorMessage={errorMessage}
       successMessage={successMessage}
       isSaving={isSaving}
+      isSyncingCalendar={isSyncingCalendar}
+      isGoogleSyncConfirmOpen={isGoogleSyncConfirmOpen}
       deleteAllDays={deleteAllDays}
       onDialogClose={() => setIsDialogOpen(false)}
       onEditDialogClose={() => setIsEditDialogOpen(false)}

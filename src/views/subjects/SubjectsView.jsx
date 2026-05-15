@@ -1,4 +1,4 @@
-import { BookOpen, Pencil, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Pencil, Plus, Trash2, UserRoundPlus } from "lucide-react";
 import { AlertDialog } from "../../components/ui/alert-dialog";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
@@ -10,10 +10,22 @@ export default function SubjectsView({
   isDialogOpen,
   isEditDialogOpen,
   isDeleteDialogOpen,
+  isTeacherDialogOpen,
+  isSelectionMode,
   selectedSubject,
+  selectedSubjectIds,
+  bulkTeacher,
+  teacherOptions,
   message,
   form,
   onOpenNew,
+  onStartTeacherAssignment,
+  onCancelSelection,
+  onOpenTeacherDialog,
+  onTeacherDialogClose,
+  onSelectedSubjectToggle,
+  onBulkTeacherChange,
+  onAssignTeacher,
   onOpenEdit,
   onOpenDelete,
   onDialogClose,
@@ -30,10 +42,28 @@ export default function SubjectsView({
         <h2 className="font-serif text-5xl font-semibold text-[var(--accent)]">
           Your Subjects
         </h2>
-        <Button variant="icon" className="h-12 w-12" onClick={onOpenNew} aria-label="Add subject">
-          <Plus size={22} />
-        </Button>
       </section>
+
+      <div className="sticky top-4 z-20 -mt-2 mb-4 ml-auto flex w-fit max-w-full items-center gap-3 rounded-2xl border border-[var(--app-border)] bg-[var(--app-panel)] p-2 shadow-[var(--shadow-card)]">
+          {isSelectionMode ? (
+            <>
+              <Button variant="outline" onClick={onCancelSelection}>
+                Cancel
+              </Button>
+              <Button onClick={onOpenTeacherDialog} disabled={selectedSubjectIds.length === 0}>
+                Add Teacher ({selectedSubjectIds.length})
+              </Button>
+            </>
+          ) : (
+            <Button variant="outline" className="gap-2" onClick={onStartTeacherAssignment}>
+              <UserRoundPlus size={18} />
+              Assign Teacher
+            </Button>
+          )}
+          <Button variant="icon" className="h-12 w-12" onClick={onOpenNew} aria-label="Add subject">
+            <Plus size={22} />
+          </Button>
+      </div>
 
       <Card className="min-h-[260px] border-dashed border-[#354637]/50 bg-[#354637] p-7 shadow-none">
         {loading ? (
@@ -52,8 +82,23 @@ export default function SubjectsView({
             {subjects.map((subject) => (
               <div
                 key={subject.id}
-                className="group relative rounded-[24px] border border-[#ddd4c3] bg-[#fbf9f4] p-5"
+                className={`group relative rounded-[24px] border bg-[#fbf9f4] p-5 ${
+                  selectedSubjectIds.includes(subject.id)
+                    ? "border-[#8faf7b] ring-2 ring-[#8faf7b]/40"
+                    : "border-[#ddd4c3]"
+                }`}
               >
+                {isSelectionMode ? (
+                  <label className="absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl bg-[#e8f0e4]">
+                    <input
+                      type="checkbox"
+                      checked={selectedSubjectIds.includes(subject.id)}
+                      onChange={() => onSelectedSubjectToggle(subject.id)}
+                      className="h-4 w-4 accent-[#5e7b4d]"
+                      aria-label={`Select ${subject.name}`}
+                    />
+                  </label>
+                ) : null}
                 <div
                   className="mb-4 h-3 w-16 rounded-full"
                   style={{ backgroundColor: subject.color }}
@@ -62,7 +107,14 @@ export default function SubjectsView({
                 <p className="mt-1 text-lg text-[#6e7c69]">
                   {subject.room || "Room not set"}
                 </p>
-                <div className="absolute right-4 top-4 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                <p className="mt-1 text-base text-[#7d8a78]">
+                  {subject.teacher || "Teacher not set"}
+                </p>
+                <div
+                  className={`absolute right-4 top-4 flex gap-2 transition-opacity ${
+                    isSelectionMode ? "hidden" : "opacity-0 group-hover:opacity-100"
+                  }`}
+                >
                   <button
                     type="button"
                     onClick={() => onOpenEdit(subject)}
@@ -88,6 +140,7 @@ export default function SubjectsView({
 
       <AlertDialog open={isDialogOpen} title="New Subject" onClose={onDialogClose}>
         <div className="space-y-6">
+          <TeacherOptions options={teacherOptions} id="teacher-options" />
           <div>
             <label className="mb-2 block text-xl font-medium text-[#354737]">
               Subject Name
@@ -99,13 +152,23 @@ export default function SubjectsView({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-[1fr_130px]">
+          <div className="grid gap-4 sm:grid-cols-[1fr_1fr_130px]">
             <div>
               <label className="mb-2 block text-xl font-medium text-[#354737]">Room</label>
               <Input
                 placeholder="e.g. Hall 4"
                 value={form.room}
                 onChange={(event) => onFormChange("room", event.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xl font-medium text-[#354737]">Teacher</label>
+              <Input
+                placeholder="e.g. Prof. Santos"
+                value={form.teacher}
+                list="teacher-options"
+                onChange={(event) => onFormChange("teacher", event.target.value)}
               />
             </div>
 
@@ -137,6 +200,7 @@ export default function SubjectsView({
 
       <AlertDialog open={isEditDialogOpen} title="Edit Subject" onClose={onEditDialogClose}>
         <div className="space-y-6">
+          <TeacherOptions options={teacherOptions} id="teacher-options-edit" />
           <div>
             <label className="mb-2 block text-xl font-medium text-[#354737]">
               Subject Name
@@ -148,13 +212,23 @@ export default function SubjectsView({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-[1fr_130px]">
+          <div className="grid gap-4 sm:grid-cols-[1fr_1fr_130px]">
             <div>
               <label className="mb-2 block text-xl font-medium text-[#354737]">Room</label>
               <Input
                 placeholder="e.g. Hall 4"
                 value={form.room}
                 onChange={(event) => onFormChange("room", event.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xl font-medium text-[#354737]">Teacher</label>
+              <Input
+                placeholder="e.g. Prof. Santos"
+                value={form.teacher}
+                list="teacher-options-edit"
+                onChange={(event) => onFormChange("teacher", event.target.value)}
               />
             </div>
 
@@ -171,12 +245,44 @@ export default function SubjectsView({
             </label>
           </div>
 
+          {message ? <p className="text-sm text-red-600">{message}</p> : null}
+
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={onEditDialogClose}>
               Cancel
             </Button>
             <Button onClick={onUpdate} disabled={!form.name.trim()}>
               Save Changes
+            </Button>
+          </div>
+        </div>
+      </AlertDialog>
+
+      <AlertDialog open={isTeacherDialogOpen} title="Assign Teacher" onClose={onTeacherDialogClose}>
+        <div className="space-y-6">
+          <TeacherOptions options={teacherOptions} id="teacher-options-bulk" />
+          <p className="text-lg text-[#6e7c69]">
+            Add one teacher to {selectedSubjectIds.length} selected subjects.
+          </p>
+
+          <div>
+            <label className="mb-2 block text-xl font-medium text-[#354737]">Teacher</label>
+            <Input
+              placeholder="e.g. Sir Bucol"
+              value={bulkTeacher}
+              list="teacher-options-bulk"
+              onChange={(event) => onBulkTeacherChange(event.target.value)}
+            />
+          </div>
+
+          {message ? <p className="text-sm text-red-600">{message}</p> : null}
+
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={onTeacherDialogClose}>
+              Cancel
+            </Button>
+            <Button onClick={onAssignTeacher} disabled={!bulkTeacher.trim()}>
+              Save Teacher
             </Button>
           </div>
         </div>
@@ -202,5 +308,15 @@ export default function SubjectsView({
         </div>
       </AlertDialog>
     </div>
+  );
+}
+
+function TeacherOptions({ options, id }) {
+  return (
+    <datalist id={id}>
+      {options.map((teacher) => (
+        <option key={teacher} value={teacher} />
+      ))}
+    </datalist>
   );
 }

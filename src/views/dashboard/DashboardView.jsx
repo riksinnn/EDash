@@ -92,6 +92,10 @@ export default function DashboardView({
                   <p className="mt-3 text-2xl text-[var(--text-secondary)]">
                     {formatTime(happeningNow.start_time)} - {formatTime(happeningNow.end_time)}
                   </p>
+                  <p className="mt-2 text-lg text-[var(--text-muted)]">
+                    {happeningNow.subjects.teacher || "Teacher not set"}
+                    {happeningNow.subjects.room ? ` - ${happeningNow.subjects.room}` : ""}
+                  </p>
                 </>
               ) : (
                 <>
@@ -118,6 +122,10 @@ export default function DashboardView({
                   </p>
                   <p className="mt-3 text-2xl text-[var(--text-secondary)]">
                     {formatTime(upNext.start_time)} - {formatTime(upNext.end_time)}
+                  </p>
+                  <p className="mt-2 text-lg text-[var(--text-muted)]">
+                    {upNext.subjects.teacher || "Teacher not set"}
+                    {upNext.subjects.room ? ` - ${upNext.subjects.room}` : ""}
                   </p>
                   <p className="mt-4 text-3xl font-semibold text-[var(--accent-strong)]">
                     {countdown}

@@ -1,4 +1,4 @@
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { RefreshCw, Plus, Edit, Trash2 } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { AlertDialog } from "../../components/ui/alert-dialog";
@@ -16,6 +16,9 @@ export default function ScheduleView({
   selectedDay,
   onSelectedDayChange,
   onOpenNewDialog,
+  onOpenGoogleSyncConfirm,
+  onGoogleSyncConfirmClose,
+  onSyncGoogleCalendar,
   dayEntries,
   formatTime,
   onOpenEditDialog,
@@ -29,6 +32,8 @@ export default function ScheduleView({
   errorMessage,
   successMessage,
   isSaving,
+  isSyncingCalendar,
+  isGoogleSyncConfirmOpen,
   deleteAllDays,
   onDialogClose,
   onEditDialogClose,
@@ -79,9 +84,20 @@ export default function ScheduleView({
           })}
         </div>
 
-        <Button variant="icon" className="h-12 w-12" onClick={onOpenNewDialog} aria-label="Schedule class">
-          <Plus size={22} />
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            className="h-12 gap-2"
+            onClick={onOpenGoogleSyncConfirm}
+            disabled={isSyncingCalendar}
+          >
+            <RefreshCw size={18} className={isSyncingCalendar ? "animate-spin" : ""} />
+            {isSyncingCalendar ? "Syncing..." : "Sync Google"}
+          </Button>
+          <Button variant="icon" className="h-12 w-12" onClick={onOpenNewDialog} aria-label="Schedule class">
+            <Plus size={22} />
+          </Button>
+        </div>
       </section>
 
       <section className="space-y-4">
@@ -110,6 +126,10 @@ export default function ScheduleView({
                     </p>
                     <p className="mt-2 text-lg text-[var(--text-muted)]">
                       {formatTime(entry.startTime)} - {formatTime(entry.endTime)}
+                    </p>
+                    <p className="mt-1 text-base text-[var(--text-secondary)]">
+                      {entry.teacher || "Teacher not set"}
+                      {entry.room ? ` - ${entry.room}` : ""}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100">
@@ -300,6 +320,32 @@ export default function ScheduleView({
               Cancel
             </Button>
             <Button onClick={onGoToSubjects}>Go to Subjects</Button>
+          </div>
+        </div>
+      </AlertDialog>
+
+      <AlertDialog
+        open={isGoogleSyncConfirmOpen}
+        title="Sync Google Calendar?"
+        onClose={onGoogleSyncConfirmClose}
+      >
+        <div className="space-y-5">
+          <p className="text-lg text-[var(--text-secondary)]">
+            EDash will ask Google for read-only calendar access, then import upcoming timed events
+            as class schedule blocks. Nothing syncs unless you continue.
+          </p>
+
+          <p className="text-sm text-[var(--text-muted)]">
+            Existing matching classes will be skipped to avoid duplicates.
+          </p>
+
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={onGoogleSyncConfirmClose}>
+              Cancel
+            </Button>
+            <Button onClick={onSyncGoogleCalendar} disabled={isSyncingCalendar}>
+              {isSyncingCalendar ? "Syncing..." : "Continue"}
+            </Button>
           </div>
         </div>
       </AlertDialog>

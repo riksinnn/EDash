@@ -4,6 +4,9 @@ import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 import DashboardView from "../views/dashboard/DashboardView";
 
+const scheduleSelectWithTeacher = "*, subjects(id, name, color, room, teacher)";
+const scheduleSelectFallback = "*, subjects(id, name, color, room)";
+
 function timeToDate(timeString) {
   if (!timeString) return new Date();
   const [hours, minutes] = timeString.split(":");
@@ -41,11 +44,22 @@ export default function Dashboard() {
 
       const today = new Date().getDay();
 
-      const { data: scheduleData, error: scheduleError } = await supabase
+      let { data: scheduleData, error: scheduleError } = await supabase
         .from("schedule")
-        .select("*, subjects(id, name, color)")
+        .select(scheduleSelectWithTeacher)
         .eq("user_id", user.id)
         .eq("day_of_week", today);
+
+      if (scheduleError) {
+        console.warn("Retrying dashboard schedule load without teacher column:", scheduleError);
+        const fallbackResult = await supabase
+          .from("schedule")
+          .select(scheduleSelectFallback)
+          .eq("user_id", user.id)
+          .eq("day_of_week", today);
+        scheduleData = fallbackResult.data;
+        scheduleError = fallbackResult.error;
+      }
 
       if (scheduleError) {
         console.error("Error fetching schedule:", scheduleError);

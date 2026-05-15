@@ -17,9 +17,9 @@ export default function AuthShell({
             {showBackLink ? (
               <Link
                 to="/"
-                className="mb-8 flex w-fit items-center gap-2 text-sm font-medium text-[var(--text-secondary)] transition hover:translate-x-[-2px] hover:text-[var(--text-primary)]"
+                className="mb-8 flex w-fit items-center gap-2 rounded-full border border-[var(--app-border-strong)] bg-[var(--app-panel)] px-4 py-2 text-base font-semibold text-[var(--accent-strong)] shadow-[var(--shadow-soft)] transition hover:translate-x-[-2px] hover:bg-[var(--accent-soft)] hover:text-[var(--text-primary)]"
               >
-                <ArrowLeft size={16} />
+                <ArrowLeft size={18} />
                 <span>Back to Home</span>
               </Link>
             ) : null}

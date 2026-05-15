@@ -6,6 +6,7 @@ import Dashboard from "./pages/dashboard";
 import Landing from "./pages/landing";
 import Schedule from "./pages/schedule";
 import Tasks from "./pages/tasks";
+import Reports from "./pages/reports";
 import Subjects from "./pages/subjects";
 import Settings from "./pages/settings";
 import About from "./pages/About";
@@ -98,6 +99,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Subjects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <Reports />
                 </ProtectedRoute>
               }
             />

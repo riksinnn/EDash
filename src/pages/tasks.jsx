@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { differenceInDays, isAfter, isPast, isToday, parseISO } from "date-fns";
 import { useAuth } from "../context/AuthContext";
+import { recordActivity } from "../lib/activityLog";
 import { supabase } from "../lib/supabase";
 import TasksView from "../views/tasks/TasksView";
 
@@ -28,7 +29,7 @@ export default function Tasks() {
 
       const { data: tasksData, error: tasksError } = await supabase
         .from("tasks")
-        .select("id, title, status, deadline, subjects ( name, color )")
+        .select("id, title, status, deadline, completed_at, subjects ( name, color )")
         .eq("user_id", user.id);
 
       if (tasksError) {
@@ -42,6 +43,7 @@ export default function Tasks() {
             : "Ongoing",
           subject: task.subjects?.name || "No subject",
           deadline: task.deadline ? parseISO(task.deadline) : null,
+          completed_at: task.completed_at,
           color: task.subjects?.color,
         }));
         setTasks(formattedTasks);
@@ -123,7 +125,10 @@ export default function Tasks() {
 
     const { error } = await supabase
       .from("tasks")
-      .update({ status: newStatus.toLowerCase() })
+      .update({
+        status: newStatus.toLowerCase(),
+        completed_at: newStatus === "Done" ? new Date().toISOString() : null,
+      })
       .eq("id", task.id)
       .select("*, subjects(name, color)")
       .single();
@@ -134,8 +139,25 @@ export default function Tasks() {
     }
 
     setTasks((current) =>
-      current.map((entry) => (entry.id === task.id ? { ...entry, status: newStatus } : entry))
+      current.map((entry) =>
+        entry.id === task.id
+          ? {
+              ...entry,
+              status: newStatus,
+              completed_at: newStatus === "Done" ? new Date().toISOString() : null,
+            }
+          : entry
+      )
     );
+
+    await recordActivity({
+      userId: user?.id,
+      action: newStatus === "Done" ? "completed" : "reopened",
+      entityType: "task",
+      entityId: task.id,
+      description: `${newStatus === "Done" ? "Completed" : "Reopened"} task ${task.title}`,
+      metadata: { title: task.title, status: newStatus.toLowerCase() },
+    });
   };
 
   const handleCreateTask = async () => {
@@ -150,6 +172,7 @@ export default function Tasks() {
       status: form.status.toLowerCase(),
       subject_id: form.subject_id || null,
       deadline: form.deadline,
+      completed_at: form.status === "Done" ? new Date().toISOString() : null,
     };
 
     const { data, error } = await supabase
@@ -175,6 +198,7 @@ export default function Tasks() {
         status: form.status,
         subject: selectedSubject?.name || "No subject",
         deadline: form.deadline,
+        completed_at: taskPayload.completed_at,
         color: selectedSubject?.color,
       },
     ]);
@@ -182,6 +206,15 @@ export default function Tasks() {
     setMessage("");
     setIsDialogOpen(false);
     setIsSaving(false);
+
+    await recordActivity({
+      userId: user.id,
+      action: "created",
+      entityType: "task",
+      entityId: data.id,
+      description: `Created task ${form.title.trim()}`,
+      metadata: { title: form.title.trim(), subject: selectedSubject?.name || null },
+    });
   };
 
   const handleUpdateTask = async () => {
@@ -195,6 +228,7 @@ export default function Tasks() {
       status: form.status.toLowerCase(),
       subject_id: form.subject_id || null,
       deadline: form.deadline,
+      completed_at: form.status === "Done" ? editingTask.completed_at || new Date().toISOString() : null,
     };
 
     const { data, error } = await supabase
@@ -220,6 +254,7 @@ export default function Tasks() {
               status: data.status.charAt(0).toUpperCase() + data.status.slice(1),
               subject: data.subjects?.name || "No subject",
               deadline: data.deadline ? parseISO(data.deadline) : null,
+              completed_at: data.completed_at,
               color: data.subjects?.color,
             }
           : task
@@ -228,6 +263,15 @@ export default function Tasks() {
 
     setIsSaving(false);
     closeDialog();
+
+    await recordActivity({
+      userId: user.id,
+      action: "updated",
+      entityType: "task",
+      entityId: data.id,
+      description: `Updated task ${data.title}`,
+      metadata: { title: data.title, status: data.status },
+    });
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -239,6 +283,15 @@ export default function Tasks() {
       console.error("Error deleting task:", error);
       alert("Could not delete the task.");
     } else {
+      const deletedTask = tasks.find((task) => task.id === taskId);
+      await recordActivity({
+        userId: user?.id,
+        action: "deleted",
+        entityType: "task",
+        entityId: taskId,
+        description: `Deleted task ${deletedTask?.title || "Untitled task"}`,
+        metadata: { title: deletedTask?.title || null },
+      });
       setTasks((current) => current.filter((task) => task.id !== taskId));
     }
   };

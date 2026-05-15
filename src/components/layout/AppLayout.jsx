@@ -2,6 +2,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import {
+  BarChart3,
   CalendarDays,
   CheckSquare,
   House,
@@ -16,6 +17,7 @@ const navItems = [
   { label: "Home", path: "/dashboard", icon: House },
   { label: "Schedule", path: "/schedule", icon: CalendarDays },
   { label: "Tasks", path: "/tasks", icon: CheckSquare },
+  { label: "Reports", path: "/reports", icon: BarChart3 },
   { label: "Settings", path: "/settings", icon: Settings },
 ];
 
@@ -24,8 +26,41 @@ const pageTitles = {
   "/schedule": "Schedule",
   "/tasks": "Tasks",
   "/subjects": "Subjects",
+  "/reports": "Reports",
   "/settings": "Settings",
 };
+
+function AppNavItem({ item }) {
+  const Icon = item.icon;
+
+  return (
+    <NavLink
+      to={item.path}
+      className={({ isActive }) =>
+        cn(
+          "flex flex-col items-center gap-2 rounded-2xl px-3 py-2 text-xs font-medium transition-colors",
+          isActive
+            ? "text-[var(--accent)]"
+            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+        )
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <span
+            className={cn(
+              "rounded-2xl p-2 transition-colors",
+              isActive ? "bg-[var(--accent-soft)]" : "bg-transparent"
+            )}
+          >
+            <Icon size={20} strokeWidth={2.1} />
+          </span>
+          <span>{item.label}</span>
+        </>
+      )}
+    </NavLink>
+  );
+}
 
 export default function AppLayout({ children }) {
   const location = useLocation();
@@ -37,11 +72,12 @@ export default function AppLayout({ children }) {
         className="mx-auto min-h-screen max-w-[1440px] border-x bg-[image:var(--shell-gradient)]"
         style={{ borderColor: "var(--app-border)" }}
       >
+        /* TAENA NANDITO YUNG HEADER OH * /
         <header
-          className="border-b px-4 py-4 sm:px-6"
+          className="border-b px-4 py-5 text-center sm:px-6"
           style={{ borderColor: "var(--app-border)" }}
         >
-          <h1 className="font-serif text-2xl font-semibold tracking-tight text-[var(--accent)] sm:text-3xl">
+          <h1 className="font-serif text-4xl font-semibold tracking-tight text-[var(--accent)] sm:text-5xl">
             {title}
           </h1>
         </header>
@@ -57,34 +93,9 @@ export default function AppLayout({ children }) {
             backgroundColor: "var(--nav-bg)",
           }}
         >
-          <div className="mx-auto grid max-w-[1440px] grid-cols-4 gap-2 px-4 py-4 sm:px-6">
-            {navItems.map(({ label, path, icon: Icon }) => (
-              <NavLink
-                key={label}
-                to={path}
-                className={({ isActive }) =>
-                  cn(
-                    "flex flex-col items-center gap-2 rounded-2xl px-3 py-2 text-xs font-medium transition-colors",
-                    isActive
-                      ? "text-[var(--accent)]"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <span
-                      className={cn(
-                        "rounded-2xl p-2 transition-colors",
-                        isActive ? "bg-[var(--accent-soft)]" : "bg-transparent"
-                      )}
-                    >
-                      <Icon size={20} strokeWidth={2.1} />
-                    </span>
-                    <span>{label}</span>
-                  </>
-                )}
-              </NavLink>
+          <div className="mx-auto grid max-w-[1440px] grid-cols-5 gap-2 px-4 py-4 sm:px-6">
+            {navItems.map((item) => (
+              <AppNavItem key={item.label} item={item} />
             ))}
           </div>
         </nav>
