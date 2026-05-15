@@ -72,7 +72,7 @@ export default function AppLayout({ children }) {
         className="mx-auto min-h-screen max-w-[1440px] border-x bg-[image:var(--shell-gradient)]"
         style={{ borderColor: "var(--app-border)" }}
       >
-        /* TAENA NANDITO YUNG HEADER OH * /
+       
         <header
           className="border-b px-4 py-5 text-center sm:px-6"
           style={{ borderColor: "var(--app-border)" }}
