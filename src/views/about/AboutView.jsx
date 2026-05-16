@@ -3,7 +3,7 @@ import { Card } from "../../components/ui/card";
 export default function AboutView({ terms }) {
   return (
     <div className="space-y-6">
-      <h2 className="font-serif text-5xl font-semibold text-[var(--text-primary)]">
+      <h2 className="font-serif text-5xl font-semibold text-[var(--accent)]">
         About & Terms
       </h2>
       <Card className="border-dashed border-[var(--app-border)] bg-[color:color-mix(in_srgb,var(--app-panel)_92%,transparent)] p-7 shadow-none">

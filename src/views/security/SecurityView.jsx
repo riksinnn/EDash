@@ -15,7 +15,7 @@ export default function SecurityView({
 }) {
   return (
     <div className="space-y-6">
-      <h2 className="font-serif text-5xl font-semibold text-[#283728]">Security</h2>
+      <h2 className="font-serif text-5xl font-semibold text-[var(--accent)]">Security</h2>
       <Card className="border-dashed border-[#e3dbcc] bg-[#f7f4ee]/70 p-7 shadow-none">
         <div className="mx-auto max-w-md space-y-6">
           <div>
