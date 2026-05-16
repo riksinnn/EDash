@@ -154,11 +154,12 @@ export default function ScheduleView({
               No subjects yet. Add your first subject first before scheduling a class.
             </div>
           ) : null}
-
-          <SelectField label="Subject" value={form.subject_id} onChange={onFormSubjectChange}>
-            <option value="">Select subject</option>
+          
+          <label className="text-sm font-medium text-[var(--text-secondary)]">Subject</label>
+          <SelectField value={form.subject_id} onChange={onFormSubjectChange} >
+            <option value="" >Select subject</option>
             {subjects.map((subject) => (
-              <option key={subject.id} value={subject.id}>
+              <option key={subject.id} value={subject.id} className="text-[var(--text-primary)]">
                 {subject.name}
               </option>
             ))}
@@ -223,7 +224,7 @@ export default function ScheduleView({
           >
             <option value="">Select subject</option>
             {subjects.map((subject) => (
-              <option key={subject.id} value={subject.id}>
+              <option key={subject.id} value={subject.id} className="text-[var(--text-primary)]">
                 {subject.name}
               </option>
             ))}

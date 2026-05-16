@@ -38,23 +38,25 @@ export default function TasksView({
   return (
     <div className="space-y-5 sm:space-y-6">
       <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="grid w-full grid-cols-4 rounded-[18px] border-[var(--app-border)] bg-[var(--app-panel-soft)] p-1 shadow-[0_12px_28px_rgba(127,117,96,0.1)] sm:inline-flex sm:w-auto sm:rounded-[22px]">
-          {filters.map((filter) => (
-            <button
-              key={filter}
-              type="button"
-              onClick={() => onFilterChange(filter)}
-              className={cn(
-                "min-w-0 rounded-[14px] px-2 py-2.5 text-sm font-medium transition-colors sm:rounded-[18px] sm:px-6 sm:py-3 sm:text-xl",
-                activeFilter === filter
-                  ? "bg-[#f2eee6] text-[#354737]"
-                  : "text-[#5e6f5d] hover:bg-[#f4f0e7]"
-              )}
-            >
-              {filter}
-            </button>
-          ))}
-        </div>
+        <div className="grid w-full grid-cols-4 rounded-[18px] border border-[var(--app-border)] bg-[var(--app-panel-soft)] p-1 sm:inline-flex sm:w-auto sm:rounded-[22px]">
+              {filters.map((filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() => onFilterChange(filter)}
+                  className={cn(
+                    "min-w-0 rounded-[14px] px-2 py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer sm:rounded-[18px] sm:px-6 sm:py-3 sm:text-xl",
+                    activeFilter === filter
+                      // Active State: Crisp cream/green in light mode, clean deep gray/white in dark mode
+                      ? "bg-[#f2eee6] text-[#354737] shadow-sm dark:bg-[var(--app-panel)] dark:text-[var(--text-primary)]"
+                      // Inactive State: Uses token variables so they shift automatically across modes
+                      : "text-[var(--text-secondary)] hover:bg-[#f4f0e7] hover:text-[var(--text-primary)] dark:hover:bg-[var(--app-panel)]/50"
+                  )}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
 
         <Button
           variant="icon"
