@@ -2,8 +2,13 @@ import { Card } from "../../components/ui/card";
 
 export default function AboutView({ terms }) {
   return (
+<<<<<<< HEAD
     <div className="space-y-5 sm:space-y-6">
       <h2 className="font-serif text-4xl font-semibold text-[var(--text-primary)] sm:text-5xl">
+=======
+    <div className="space-y-6">
+      <h2 className="font-serif text-5xl font-semibold text-[var(--accent)]">
+>>>>>>> origin/not-sure-about-mobile
         About & Terms
       </h2>
       <Card className="border-dashed border-[var(--app-border)] bg-[color:color-mix(in_srgb,var(--app-panel)_92%,transparent)] p-4 shadow-none sm:p-7">
