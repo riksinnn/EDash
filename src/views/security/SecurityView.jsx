@@ -14,17 +14,10 @@ export default function SecurityView({
   onCancel,
 }) {
   return (
-<<<<<<< HEAD
-    <div className="space-y-5 sm:space-y-6">
-      <h2 className="font-serif text-4xl font-semibold text-[#283728] sm:text-5xl">Security</h2>
-      <Card className="border-dashed border-[#e3dbcc] bg-[#f7f4ee]/70 p-4 shadow-none sm:p-7">
-        <div className="mx-auto max-w-md space-y-5 sm:space-y-6">
-=======
     <div className="space-y-6">
       <h2 className="font-serif text-5xl font-semibold text-[var(--accent)]">Security</h2>
       <Card className="border-dashed border-[#e3dbcc] bg-[#f7f4ee]/70 p-7 shadow-none">
         <div className="mx-auto max-w-md space-y-6">
->>>>>>> origin/not-sure-about-mobile
           <div>
             <h3 className="text-xl font-semibold text-[#354737] sm:text-2xl">Change Password</h3>
             <p className="mt-1 text-base text-[#6e7c69] sm:text-lg">
