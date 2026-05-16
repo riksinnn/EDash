@@ -148,7 +148,7 @@ export default function ScheduleView({
       </section>
 
       <AlertDialog open={isDialogOpen} title="Schedule Class" onClose={onDialogClose}>
-        <div className="max-h-[80vh] space-y-6 overflow-y-auto pr-1">
+        <div className="max-h-[80vh] space-y-6 overflow-y-auto pr-1 ">
           {subjects.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[var(--app-border)] bg-[var(--app-panel-soft)] p-4 text-sm text-[var(--text-secondary)]">
               No subjects yet. Add your first subject first before scheduling a class.

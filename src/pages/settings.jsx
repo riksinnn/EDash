@@ -17,6 +17,7 @@ export default function Settings() {
       onSecurity={() => navigate("/security")}
       onAbout={() => navigate("/about")}
       onLogout={() => navigate("/logout")}
+      onReports={() => navigate("/reports")}
     />
   );
 }

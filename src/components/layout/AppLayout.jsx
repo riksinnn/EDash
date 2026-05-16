@@ -7,6 +7,7 @@ import {
   CheckSquare,
   House,
   Settings,
+  BookOpen,
 } from "lucide-react";
 
 function cn(...inputs) {
@@ -17,7 +18,7 @@ const navItems = [
   { label: "Home", path: "/dashboard", icon: House },
   { label: "Schedule", path: "/schedule", icon: CalendarDays },
   { label: "Tasks", path: "/tasks", icon: CheckSquare },
-  { label: "Reports", path: "/reports", icon: BarChart3 },
+  {label: "Subjects", path: "/subjects", icon: BookOpen },
   { label: "Settings", path: "/settings", icon: Settings },
 ];
 

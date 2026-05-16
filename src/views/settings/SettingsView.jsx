@@ -1,4 +1,4 @@
-import { ChevronRight, Moon, Bell, Shield, Info, BookOpenCheck, LogOut } from "lucide-react";
+import { ChevronRight, Moon, Bell, Shield, Info, BookOpenCheck, LogOut, BarChart3 } from "lucide-react";
 import { useMemo } from "react";
 import { Avatar } from "../../components/ui/avatar";
 import { Card } from "../../components/ui/card";
@@ -7,7 +7,7 @@ export default function SettingsView({
   user,
   isDarkMode,
   onToggleTheme,
-  onSubjects,
+  onReports,
   onSecurity,
   onAbout,
   onLogout,
@@ -55,7 +55,7 @@ export default function SettingsView({
             <button
               type="button"
               onClick={onToggleTheme}
-              className={`relative h-8 w-14 rounded-full transition-colors ${
+              className={`cursor-pointer relative h-8 w-14 rounded-full transition-colors ${
                 isDarkMode ? "bg-[var(--accent-strong)]" : "bg-[var(--app-border)]"
               }`}
               aria-label={`Switch to ${isDarkMode ? "light" : "dark"} mode`}
@@ -70,10 +70,10 @@ export default function SettingsView({
           }
         />
         <SettingsRow
-          icon={<BookOpenCheck size={20} />}
-          title="Manage Subjects"
-          description="Add, edit or remove classes"
-          onClick={onSubjects}
+          icon={<BarChart3 size={20} />}
+          title="Reports"
+          description="View and manage your reports"
+          onClick={onReports}
         />
         <SettingsRow
           icon={<Bell size={20} />}
@@ -138,7 +138,7 @@ function SettingsRow({ icon, title, description, trailing, onClick }) {
       <button
         type="button"
         onClick={onClick}
-        className="flex w-full items-center gap-3 border-b border-[var(--app-border)] px-4 py-4 text-left transition-colors hover:bg-[var(--accent-soft)] last:border-b-0 sm:gap-4 sm:px-5 sm:py-5"
+        className="cursor-pointer flex w-full items-center gap-3 border-b border-[var(--app-border)] px-4 py-4 text-left transition-colors hover:bg-[var(--accent-soft)] last:border-b-0 sm:gap-4 sm:px-5 sm:py-5"
       >
         {content}
       </button>
